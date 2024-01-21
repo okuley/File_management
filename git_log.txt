@@ -1,0 +1,3871 @@
+commit 70a03d36f7de73e51a63591d2a20137f0d1abd71
+Author: ntu-user <ntu-user@ntu.ac.uk>
+Date:   Mon Jan 1 13:26:12 2024 +0000
+
+    added download and cancel functionality to file upload
+
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+index 85c71d8..4fc565a 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+@@ -27,7 +27,9 @@ import net.lingala.zip4j.model.enums.EncryptionMethod;
+ import javafx.collections.ObservableList;
+ import javafx.event.ActionEvent;
+ import javafx.fxml.FXML;
++import javafx.fxml.FXMLLoader;
+ import javafx.scene.Group;
++import javafx.scene.Parent;
+ import javafx.scene.Scene;
+ import javafx.scene.control.Alert;
+ import javafx.scene.control.Button;
+@@ -429,6 +431,108 @@ private void editFile(ActionEvent event){
+         }
+     
+ }
+-}  
++}
++
++
++ @FXML
++ 
++ private void Cancel(){
++        Stage secondaryStage = new Stage();
++        Stage UploadfileStage = (Stage) uploadbtn.getScene().getWindow();
++     try {
++            
++        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Do you want to cancel this operation?", ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
++       alert.showAndWait();
++        
++        if (alert.getResult() == ButtonType.YES){
++        
++        FXMLLoader loader = new FXMLLoader();
++                loader.setLocation(getClass().getResource("secondary.fxml"));
++                Parent root = loader.load();
++                Scene scene = new Scene(root, 640, 480);
++                secondaryStage.setScene(scene);
++                secondaryStage.setTitle("Show Users");
++                String msg="some data sent from edit Controller";
++                secondaryStage.setUserData(msg);
++            SecondaryController secondaryController = loader.getController();
++            String[] credentials = {userTextField.getText(),userTextField.getText()};
++            secondaryController.initialise(credentials);    
++             secondaryStage.show();
++            UploadfileStage.close();
++        }
++            
++        
++
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++ }
++
++ 
++ @FXML
++ 
++ private void DownloadFile(){
++        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Do you want to download File?", ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
++       alert.showAndWait();
++        
++        if (alert.getResult() == ButtonType.YES) {
++    
++    try {
++            
++         
++        
++           
++            DB myObj = new DB();
++            Files fileTodownload=(Files) fileTableView.getSelectionModel().getSelectedItem();
++            //myObj.editFileDataDB(fileTodownload.getFile_name());
++            File newFile = new File("/home/ntu-user/App/"+fileTodownload.getOwner() +"/"+ fileTodownload.getFile_name());
++            DecryptFile(newFile);
++            
++            File downloadFile = new File("/home/ntu-user/Downloads/"+fileTodownload.getFile_name());
++    java.nio.file.Files.copy(newFile.toPath(),downloadFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
++            
++            //Start of reset the data after deleting
++            fileTableView.getColumns().clear();
++            fileTableView.getItems().clear();
++             //End of reset the data after deleting
++            ObservableList<Files> data;
++        data = myObj.getUserFilesFromTable(userTextField.getText());
++        
++        if(!data.isEmpty()){
++        TableColumn owner_show = new TableColumn("Owner");
++        owner_show.setCellValueFactory(
++        new PropertyValueFactory<>("owner"));
++
++        TableColumn file_name_show = new TableColumn("File_name");
++        file_name_show.setCellValueFactory(
++            new PropertyValueFactory<>("file_name"));
++        
++        TableColumn file_path_show = new TableColumn("File_path");
++        file_path_show.setCellValueFactory(
++            new PropertyValueFactory<>("file_path"));
++        
++        TableColumn file_size_show = new TableColumn("File_size");
++        file_size_show.setCellValueFactory(
++            new PropertyValueFactory<>("file_size"));
++        TableColumn creation_date_show = new TableColumn("Creation_date");
++        creation_date_show.setCellValueFactory(
++            new PropertyValueFactory<>("creation_date"));
++        TableColumn modification_date_show = new TableColumn("Modification_date");
++        modification_date_show.setCellValueFactory(
++            new PropertyValueFactory<>("modification_date"));
++        
++        fileTableView.setItems(data);
++        fileTableView.getColumns().addAll(owner_show,file_name_show,file_path_show,file_size_show,creation_date_show,modification_date_show);
++        
++          dialogue("Edit Confirmation","File has been Updated Successfully.");
++        }
++    }catch (Exception e) {
++            e.printStackTrace();
++        }
++    
++}
++ }
++
++ 
+ }
+ 
+diff --git a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/UploadFile.fxml b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/UploadFile.fxml
+index 098f170..ea3cc8d 100644
+--- a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/UploadFile.fxml
++++ b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/UploadFile.fxml
+@@ -43,6 +43,8 @@
+             <Button fx:id="uploadbtn" mnemonicParsing="false" onAction="#Upload" text="Upload File" />
+             <Button fx:id="deleteFilebtn" mnemonicParsing="false" onAction="#deleteFile" text="Delete File" GridPane.columnIndex="1" />
+             <Button fx:id="editFilebtn" mnemonicParsing="false" onAction="#editFile" prefHeight="24.0" prefWidth="85.0" text="Edit File" GridPane.columnIndex="2" />
++            <Button fx:id="downloadbtn" mnemonicParsing="false" onAction="#DownloadFile" text="Downoad" GridPane.columnIndex="3" />
++            <Button fx:id="cancelbtn" mnemonicParsing="false" onAction="#Cancel" text="Cancel" GridPane.columnIndex="4" />
+          </children>
+       </GridPane>
+     </children>
+
+commit 5b21a65de7869e819d675d9d877cac39fe515426
+Author: ntu-user <ntu-user@ntu.ac.uk>
+Date:   Tue Dec 26 23:23:47 2023 +0000
+
+    added edit file functionality initial
+
+diff --git a/JavaFXApplication1/pom.xml b/JavaFXApplication1/pom.xml
+index 44720c3..1e2f965 100644
+--- a/JavaFXApplication1/pom.xml
++++ b/JavaFXApplication1/pom.xml
+@@ -51,6 +51,12 @@
+             <artifactId>jsch</artifactId>
+             <version>0.1.55</version>
+         </dependency>
++        <dependency>
++            <groupId>com.dorkbox</groupId>
++            <artifactId>Desktop</artifactId>
++            <version>1.0</version>
++            <type>jar</type>
++        </dependency>
+     </dependencies>
+     <build>
+         <plugins>
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+index 82cd687..ba29ba0 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+@@ -19,6 +19,7 @@ import java.security.NoSuchAlgorithmException;
+ import java.security.SecureRandom;
+ import java.security.spec.InvalidKeySpecException;
+ import java.sql.Timestamp;
++import java.time.LocalDate;
+ import java.time.LocalDateTime;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+@@ -333,6 +334,40 @@ public class DB {
+        }
+        
+ 
++     /**
++     * @brief file  data in the database method
++     * @param File_name of type String
++     */ 
++       public void editFileDataDB(String File_name) throws InvalidKeySpecException, ClassNotFoundException {
++       
++       try{
++        
++          Class.forName("org.sqlite.JDBC");
++            connection = DriverManager.getConnection(fileName);
++            var statement = connection.createStatement();
++            statement.setQueryTimeout(timeout);          
++            //ResultSet rs= statement.executeQuery("select * from " + dataBaseTableName + " where name= "+ "\""+user+ "\"");
++            statement.executeUpdate("update " + FileTableName + " set modification_date = " +"\""+LocalDate.now()+ "\""+ " where file_name= "+ "\""+File_name+ "\"");
++         
++       }
++       
++       catch(SQLException ex){
++       Logger.getLogger(DB.class.getName()).log(Level.SEVERE, null, ex);
++       }
++       finally {
++                try {
++                    if (connection != null) {
++                        connection.close();
++                    }
++                } catch (SQLException e) {
++                    // connection close failed.
++                    System.err.println(e.getMessage());
++                }
++            }
++       
++       }
++       
++       
+         
+         
+         
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/Files.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/Files.java
+index 2739cc4..b9a2a8e 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/Files.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/Files.java
+@@ -22,6 +22,7 @@ public class Files  {
+     private SimpleStringProperty file_path;
+     private SimpleIntegerProperty file_size;
+     private  ObjectProperty<Timestamp> creation_date;
++    private  ObjectProperty<Timestamp> modification_date;
+ 
+     
+     
+@@ -76,6 +77,14 @@ public class Files  {
+     public void setCreation_date(Timestamp creation_date) {
+         this.creation_date.set(creation_date);
+     }
++    
++     public Timestamp getModification_date() {
++        return creation_date.get();
++    }
++
++    public void setModification_date(Timestamp modification_date) {
++        this.creation_date.set(modification_date);
++    }
+ 
+ 
+ }
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+index a2dde16..85c71d8 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+@@ -4,6 +4,8 @@
+  */
+ package com.mycompany.javafxapplication1;
+ 
++
++
+ import java.io.BufferedOutputStream;
+ import java.io.BufferedReader;
+ import java.io.File;
+@@ -40,6 +42,7 @@ import javafx.stage.FileChooser;
+ import javafx.stage.Stage;
+ 
+ 
++
+ /**
+  *
+  * @author ntu-user
+@@ -60,6 +63,10 @@ public class UploadFileController {
+      
+      @FXML
+      private Button deleteFilebtn;
++     
++     @FXML
++     private Button editFilebtn;
++     
+     
+     
+      @FXML
+@@ -92,9 +99,12 @@ public class UploadFileController {
+         TableColumn creation_date_show = new TableColumn("Creation_date");
+         creation_date_show.setCellValueFactory(
+             new PropertyValueFactory<>("creation_date"));
++        TableColumn modification_date_show = new TableColumn("Modification_date");
++        modification_date_show.setCellValueFactory(
++            new PropertyValueFactory<>("modification_date"));
+         
+         fileTableView.setItems(data);
+-        fileTableView.getColumns().addAll(owner_show,file_name_show,file_path_show,file_size_show,creation_date_show);
++        fileTableView.getColumns().addAll(owner_show,file_name_show,file_path_show,file_size_show,creation_date_show,modification_date_show);
+         }
+         
+             
+@@ -113,7 +123,7 @@ public class UploadFileController {
+         FileChooser fileChooser = new FileChooser();
+         fileChooser.setTitle("Open Resource File");
+        File selectedFile = fileChooser.showOpenDialog(UploadfileStage);
+-       
++      
+         
+         if(selectedFile!=null){
+             
+@@ -165,13 +175,16 @@ if (!userdir.exists()){
+         TableColumn creation_date_show = new TableColumn("Creation_date");
+         creation_date_show.setCellValueFactory(
+             new PropertyValueFactory<>("creation_date"));
++        TableColumn modification_date_show = new TableColumn("Modification_date");
++        modification_date_show.setCellValueFactory(
++            new PropertyValueFactory<>("modification_date"));
+         
+         fileTableView.setItems(data);
+-        fileTableView.getColumns().addAll(owner_show,file_name_show,file_path_show,file_size_show,creation_date_show);
++        fileTableView.getColumns().addAll(owner_show,file_name_show,file_path_show,file_size_show,creation_date_show,modification_date_show);
+          EncryptFile(newFile);
+          
+          newFile.delete();
+-        DecryptFile(newFile);
++        //DecryptFile(newFile);
+         
+         FileChunking(newFile);
+         RemoteContainers rc = new RemoteContainers();
+@@ -180,7 +193,7 @@ if (!userdir.exists()){
+         rc.SendToContainer(newFile,"172.22.0.5",2);
+         rc.SendToContainer(newFile,"172.22.0.4",3);
+         rc.SendToContainer(newFile,"172.22.0.2",4);
+-        DecryptFile(newFile);
++        //DecryptFile(newFile);
+         }
+ 
+         }
+@@ -339,9 +352,12 @@ private void deleteFile(ActionEvent event){
+         TableColumn creation_date_show = new TableColumn("Creation_date");
+         creation_date_show.setCellValueFactory(
+             new PropertyValueFactory<>("creation_date"));
++        TableColumn modification_date_show = new TableColumn("Modification_date");
++        modification_date_show.setCellValueFactory(
++            new PropertyValueFactory<>("modification_date"));
+         
+         fileTableView.setItems(data);
+-        fileTableView.getColumns().addAll(owner_show,file_name_show,file_path_show,file_size_show,creation_date_show);
++        fileTableView.getColumns().addAll(owner_show,file_name_show,file_path_show,file_size_show,creation_date_show,modification_date_show);
+         
+           dialogue("Delete Confirmation","File has been deleted Successfully.");
+         }
+@@ -352,6 +368,67 @@ private void deleteFile(ActionEvent event){
+    
+     
+ }
++
++@FXML
++private void editFile(ActionEvent event){
++ 
++    Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Do you want to eidt File?", ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
++       alert.showAndWait();
++        
++        if (alert.getResult() == ButtonType.YES) {
++    
++    try {
++            
++         
++        
++           // Desktop desktop = new Desktop();
++            DB myObj = new DB();
++            Files fileToedit=(Files) fileTableView.getSelectionModel().getSelectedItem();
++            myObj.editFileDataDB(fileToedit.getFile_name());
++            File newFile = new File("/home/ntu-user/App/"+fileToedit.getOwner() +"/"+ fileToedit.getFile_name());
++            DecryptFile(newFile);
++            //desktop.Open(newFile);
++            //desktop.open("/home/ntu-user/App/"+fileToedit.getOwner() +"/"+ fileToedit.getFile_name()); 
++            //Start of reset the data after deleting
++            fileTableView.getColumns().clear();
++            fileTableView.getItems().clear();
++             //End of reset the data after deleting
++            ObservableList<Files> data;
++        data = myObj.getUserFilesFromTable(userTextField.getText());
++        
++        if(!data.isEmpty()){
++        TableColumn owner_show = new TableColumn("Owner");
++        owner_show.setCellValueFactory(
++        new PropertyValueFactory<>("owner"));
++
++        TableColumn file_name_show = new TableColumn("File_name");
++        file_name_show.setCellValueFactory(
++            new PropertyValueFactory<>("file_name"));
++        
++        TableColumn file_path_show = new TableColumn("File_path");
++        file_path_show.setCellValueFactory(
++            new PropertyValueFactory<>("file_path"));
++        
++        TableColumn file_size_show = new TableColumn("File_size");
++        file_size_show.setCellValueFactory(
++            new PropertyValueFactory<>("file_size"));
++        TableColumn creation_date_show = new TableColumn("Creation_date");
++        creation_date_show.setCellValueFactory(
++            new PropertyValueFactory<>("creation_date"));
++        TableColumn modification_date_show = new TableColumn("Modification_date");
++        modification_date_show.setCellValueFactory(
++            new PropertyValueFactory<>("modification_date"));
++        
++        fileTableView.setItems(data);
++        fileTableView.getColumns().addAll(owner_show,file_name_show,file_path_show,file_size_show,creation_date_show,modification_date_show);
++        
++          dialogue("Edit Confirmation","File has been Updated Successfully.");
++        }
++    }catch (Exception e) {
++            e.printStackTrace();
++        }
+     
+ }
++}  
++}
+ 
+diff --git a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/UploadFile.fxml b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/UploadFile.fxml
+index 54b0d6d..098f170 100644
+--- a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/UploadFile.fxml
++++ b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/UploadFile.fxml
+@@ -40,8 +40,9 @@
+           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+         </rowConstraints>
+          <children>
+-            <Button fx:id="uploadbtn" mnemonicParsing="false" onAction="#Upload" text="Upload" />
+-            <Button fx:id="deleteFilebtn" mnemonicParsing="false" onAction="#deleteFile" text="Delete" GridPane.columnIndex="1" />
++            <Button fx:id="uploadbtn" mnemonicParsing="false" onAction="#Upload" text="Upload File" />
++            <Button fx:id="deleteFilebtn" mnemonicParsing="false" onAction="#deleteFile" text="Delete File" GridPane.columnIndex="1" />
++            <Button fx:id="editFilebtn" mnemonicParsing="false" onAction="#editFile" prefHeight="24.0" prefWidth="85.0" text="Edit File" GridPane.columnIndex="2" />
+          </children>
+       </GridPane>
+     </children>
+
+commit 69786a2e15b619eb1b1d1c89f8399d612314dad2
+Author: ntu-user <ntu-user@ntu.ac.uk>
+Date:   Sun Dec 24 22:25:08 2023 +0000
+
+    added delete file functionality initial
+
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+index a01ceef..82cd687 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+@@ -229,7 +229,7 @@ public class DB {
+         
+         
+         
+-          /**
++     /**
+      * @brief delete user data from the database method
+      * @param user name of type String
+      */
+@@ -263,6 +263,40 @@ public class DB {
+             }
+         }
+     } 
++       
++       /**
++     * @brief delete file data from the database method
++     * @param file_name name of type String
++     */
++        
++       public void delFilefromDB(String file_name) throws InvalidKeySpecException, ClassNotFoundException {
++        try {
++            Class.forName("org.sqlite.JDBC");
++            connection = DriverManager.getConnection(fileName);
++            var statement = connection.createStatement();
++            statement.setQueryTimeout(timeout);          
++            statement.executeUpdate("delete from " + FileTableName + " where file_name= "+ "\""+file_name+ "\"");
++        } catch (SQLException ex) {
++            Logger.getLogger(DB.class.getName()).log(Level.SEVERE, null, ex);
++        } finally {
++            try {
++                if (connection != null) {
++                    connection.close();
++                }
++            } catch (SQLException ex) {
++                Logger.getLogger(DB.class.getName()).log(Level.SEVERE, null, ex);
++            } finally {
++                try {
++                    if (connection != null) {
++                        connection.close();
++                    }
++                } catch (SQLException e) {
++                    // connection close failed.
++                    System.err.println(e.getMessage());
++                }
++            }
++        }
++    } 
+         
+          /**
+      * @param pass
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/RemoteContainers.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/RemoteContainers.java
+index 4d9692f..46f87c4 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/RemoteContainers.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/RemoteContainers.java
+@@ -20,7 +20,12 @@ public class RemoteContainers {
+     private static final int CHANNEL_TIMEOUT = 5000;
+ 
+     
+-    
++    /**
++     * @brief SendToContainer method
++     * @param file  of type File
++     * @param REMOTE_HOST  of type String
++     * @param index  of type int
++     */
+     public void SendToContainer(File file,String REMOTE_HOST, int index){
+        //= "172.22.0.3";
+     String localFile = (file.getParent()+"/"+file.getName()+".zip.00"+index);
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+index d86c7a0..a2dde16 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+@@ -57,6 +57,9 @@ public class UploadFileController {
+     
+      @FXML
+     private TextField userTextField;
++     
++     @FXML
++     private Button deleteFilebtn;
+     
+     
+      @FXML
+@@ -200,6 +203,11 @@ private void dialogue(String headerMsg, String contentMsg) {
+         Optional<ButtonType> result = alert.showAndWait();
+     }
+ 
++    /**
++     * @brief EncryptFile method
++     * @param file name of type File
++     */
++
+ public void EncryptFile( File file) throws ZipException {
+         //File filetoSplit;
+     ZipParameters zipParameters = new ZipParameters();
+@@ -226,7 +234,10 @@ public void EncryptFile( File file) throws ZipException {
+     
+ }
+ 
+-
++    /**
++     * @brief DecryptFile method
++     * @param file name of type File
++     */
+ public void DecryptFile( File file) throws ZipException {
+ 
+     ZipParameters zipParameters = new ZipParameters();
+@@ -249,6 +260,10 @@ public void DecryptFile( File file) throws ZipException {
+ 
+     
+ }
++    /**
++     * @brief FileChunking method
++     * @param file name of type File
++     */
+ 
+ public List<File> FileChunking (File file) throws IOException{
+     int counter = 1;
+@@ -286,5 +301,57 @@ public List<File> FileChunking (File file) throws IOException{
+     
+ }
+ 
++@FXML
++private void deleteFile(ActionEvent event){
++ Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Do you want to delete File?", ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
++       alert.showAndWait();
++        
++        if (alert.getResult() == ButtonType.YES) {
++    
++    try {
++            
++            DB myObj = new DB();
++            Files fileTodelete=(Files) fileTableView.getSelectionModel().getSelectedItem();
++            myObj.delFilefromDB(fileTodelete.getFile_name());
++            //Start of reset the data after deleting
++            fileTableView.getColumns().clear();
++            fileTableView.getItems().clear();
++             //End of reset the data after deleting
++            ObservableList<Files> data;
++        data = myObj.getUserFilesFromTable(userTextField.getText());
++        
++        if(!data.isEmpty()){
++        TableColumn owner_show = new TableColumn("Owner");
++        owner_show.setCellValueFactory(
++        new PropertyValueFactory<>("owner"));
++
++        TableColumn file_name_show = new TableColumn("File_name");
++        file_name_show.setCellValueFactory(
++            new PropertyValueFactory<>("file_name"));
++        
++        TableColumn file_path_show = new TableColumn("File_path");
++        file_path_show.setCellValueFactory(
++            new PropertyValueFactory<>("file_path"));
++        
++        TableColumn file_size_show = new TableColumn("File_size");
++        file_size_show.setCellValueFactory(
++            new PropertyValueFactory<>("file_size"));
++        TableColumn creation_date_show = new TableColumn("Creation_date");
++        creation_date_show.setCellValueFactory(
++            new PropertyValueFactory<>("creation_date"));
++        
++        fileTableView.setItems(data);
++        fileTableView.getColumns().addAll(owner_show,file_name_show,file_path_show,file_size_show,creation_date_show);
++        
++          dialogue("Delete Confirmation","File has been deleted Successfully.");
++        }
++    }catch (Exception e) {
++            e.printStackTrace();
++        }
++    }
++   
+     
+ }
++    
++}
++
+diff --git a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/UploadFile.fxml b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/UploadFile.fxml
+index 545b4c6..54b0d6d 100644
+--- a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/UploadFile.fxml
++++ b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/UploadFile.fxml
+@@ -12,7 +12,7 @@
+ 
+ <VBox alignment="CENTER" prefHeight="407.0" prefWidth="639.0" spacing="20.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycompany.javafxapplication1.UploadFileController">
+     <children>
+-        <Label text="Users List" />
++        <Label text="Show user files" />
+       <GridPane>
+         <columnConstraints>
+           <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+@@ -40,7 +40,8 @@
+           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+         </rowConstraints>
+          <children>
+-            <Button fx:id="uploadbtn" mnemonicParsing="false" onAction="#Upload" text="Upload" GridPane.columnIndex="1" />
++            <Button fx:id="uploadbtn" mnemonicParsing="false" onAction="#Upload" text="Upload" />
++            <Button fx:id="deleteFilebtn" mnemonicParsing="false" onAction="#deleteFile" text="Delete" GridPane.columnIndex="1" />
+          </children>
+       </GridPane>
+     </children>
+
+commit 7c1fa6b130e9005d6af4b2f8b52ffd0e6934d2a2
+Author: ntu-user <ntu-user@ntu.ac.uk>
+Date:   Sun Dec 24 21:39:35 2023 +0000
+
+    added send to Remote container method.
+
+diff --git a/JavaFXApplication1/pom.xml b/JavaFXApplication1/pom.xml
+index 361b4b0..44720c3 100644
+--- a/JavaFXApplication1/pom.xml
++++ b/JavaFXApplication1/pom.xml
+@@ -46,6 +46,11 @@
+             <version>2.11.5</version>
+             <type>jar</type>
+         </dependency>
++        <dependency>
++            <groupId>com.jcraft</groupId>
++            <artifactId>jsch</artifactId>
++            <version>0.1.55</version>
++        </dependency>
+     </dependencies>
+     <build>
+         <plugins>
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/RemoteContainers.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/RemoteContainers.java
+new file mode 100644
+index 0000000..4d9692f
+--- /dev/null
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/RemoteContainers.java
+@@ -0,0 +1,115 @@
++/*
++ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
++ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
++ */
++package com.mycompany.javafxapplication1;
++import com.jcraft.jsch.*;
++import java.io.File;
++
++/**
++ *
++ * @author ntu-user
++ */
++public class RemoteContainers {
++    
++    
++    private static final String USERNAME = "root";
++    private static final String PASSWORD = "soft40051_pass";
++    private static final int REMOTE_PORT = 22;
++    private static final int SESSION_TIMEOUT = 10000;
++    private static final int CHANNEL_TIMEOUT = 5000;
++
++    
++    
++    public void SendToContainer(File file,String REMOTE_HOST, int index){
++       //= "172.22.0.3";
++    String localFile = (file.getParent()+"/"+file.getName()+".zip.00"+index);
++    String remoteFile = ("/root/");
++     
++    Session jschSession = null;
++    try {
++
++            JSch jsch = new JSch();
++            jsch.setKnownHosts("/home/mkyong/.ssh/known_hosts");
++
++            // Set the StrictHostKeyChecking option to "no" to automatically answer "yes" to the prompt
++            jschSession = jsch.getSession(USERNAME, REMOTE_HOST, REMOTE_PORT);
++            java.util.Properties config = new java.util.Properties();
++            config.put("StrictHostKeyChecking", "no");
++            jschSession.setConfig(config);
++
++            // authenticate using password
++            jschSession.setPassword(PASSWORD);
++
++            // 10 seconds session timeout
++            jschSession.connect(SESSION_TIMEOUT);
++
++            Channel sftp = jschSession.openChannel("sftp");
++
++            // 5 seconds timeout
++            sftp.connect(CHANNEL_TIMEOUT);
++
++            ChannelSftp channelSftp = (ChannelSftp) sftp;
++            
++          
++           
++            // transfer file from local to remote server
++            channelSftp.put(localFile, remoteFile);
++            System.out.println("File has been moved to remote server " +index);
++            channelSftp.exit();
++
++        } catch (JSchException | SftpException e) {
++            e.printStackTrace();
++        } finally {
++            if (jschSession != null) {
++                jschSession.disconnect();
++            }
++        }
++    }
++    
++    public void GetFromContainer(File file, String REMOTE_HOST, int index){
++        String localFile = (file.getParent()+"/"+file.getName()+".zip.00"+index);
++    String remoteFile = ("/root/");
++     
++    Session jschSession = null;
++    try {
++
++            JSch jsch = new JSch();
++            jsch.setKnownHosts("/home/mkyong/.ssh/known_hosts");
++
++            // Set the StrictHostKeyChecking option to "no" to automatically answer "yes" to the prompt
++            jschSession = jsch.getSession(USERNAME, REMOTE_HOST, REMOTE_PORT);
++            java.util.Properties config = new java.util.Properties();
++            config.put("StrictHostKeyChecking", "no");
++            jschSession.setConfig(config);
++
++            // authenticate using password
++            jschSession.setPassword(PASSWORD);
++
++            // 10 seconds session timeout
++            jschSession.connect(SESSION_TIMEOUT);
++
++            Channel sftp = jschSession.openChannel("sftp");
++
++            // 5 seconds timeout
++            sftp.connect(CHANNEL_TIMEOUT);
++
++            ChannelSftp channelSftp = (ChannelSftp) sftp;
++            
++          
++           
++            // transfer file from local to remote server
++            channelSftp.put(localFile, remoteFile);
++            System.out.println("File has been moved to remote server " +index);
++            channelSftp.exit();
++
++        } catch (JSchException | SftpException e) {
++            e.printStackTrace();
++        } finally {
++            if (jschSession != null) {
++                jschSession.disconnect();
++            }
++        }
++        
++    }
++}
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+index 0eb2c5d..d86c7a0 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+@@ -16,6 +16,7 @@ import java.nio.file.StandardCopyOption;
+ import java.util.ArrayList;
+ import java.util.List;
+ import java.util.Optional;
++import java.util.UUID;
+ import net.lingala.zip4j.ZipFile;
+ import net.lingala.zip4j.exception.ZipException;
+ import net.lingala.zip4j.model.ZipParameters;
+@@ -115,7 +116,8 @@ public class UploadFileController {
+             
+     File file = selectedFile.getCanonicalFile();
+     
+-    String file_name=file.getName();
++    //String file_name=file.getName();
++    String file_name=UUID.randomUUID().toString();
+     String owner=userTextField.getText();
+     int file_size=(int)file.length();
+     
+@@ -166,9 +168,16 @@ if (!userdir.exists()){
+          EncryptFile(newFile);
+          
+          newFile.delete();
+-        //DecryptFile(newFile);
++        DecryptFile(newFile);
+         
+         FileChunking(newFile);
++        RemoteContainers rc = new RemoteContainers();
++        //Remote host ips are dynamically assigned 
++        rc.SendToContainer(newFile,"172.22.0.3",1);
++        rc.SendToContainer(newFile,"172.22.0.5",2);
++        rc.SendToContainer(newFile,"172.22.0.4",3);
++        rc.SendToContainer(newFile,"172.22.0.2",4);
++        DecryptFile(newFile);
+         }
+ 
+         }
+@@ -255,6 +264,9 @@ public List<File> FileChunking (File file) throws IOException{
+         while (line != null && counter<5) {
+             File newFile = new File(file.getParent(), name + "."
+                     + String.format("%03d", counter++));
++                  // File newFile = new File(file.getParent(), UUID.randomUUID().toString());
++                  // counter++;
++                  
+             try (OutputStream out = new BufferedOutputStream(new FileOutputStream(newFile))) {
+                 long fileSize = 0;
+                 while (line != null) {
+diff --git a/JavaFXApplication1/src/main/java/module-info.java b/JavaFXApplication1/src/main/java/module-info.java
+index cc3e430..b9f54f5 100644
+--- a/JavaFXApplication1/src/main/java/module-info.java
++++ b/JavaFXApplication1/src/main/java/module-info.java
+@@ -4,6 +4,7 @@ module com.mycompany.javafxapplication1 {
+     requires javafx.graphics;
+     requires java.base;
+     requires java.sql; // added
++    requires jsch;
+ 
+     opens com.mycompany.javafxapplication1 to javafx.fxml;
+     exports com.mycompany.javafxapplication1;
+
+commit 07ff4bb18c431eef40651e5ce13156f6194bf619
+Author: ntu-user <ntu-user@ntu.ac.uk>
+Date:   Sat Dec 23 23:22:49 2023 +0000
+
+    added FileChunking method
+
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+index 32a8d77..0eb2c5d 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+@@ -166,8 +166,9 @@ if (!userdir.exists()){
+          EncryptFile(newFile);
+          
+          newFile.delete();
+-        DecryptFile(newFile);
+-        //SpitFile(file);
++        //DecryptFile(newFile);
++        
++        FileChunking(newFile);
+         }
+ 
+         }
+@@ -191,7 +192,7 @@ private void dialogue(String headerMsg, String contentMsg) {
+     }
+ 
+ public void EncryptFile( File file) throws ZipException {
+-
++        //File filetoSplit;
+     ZipParameters zipParameters = new ZipParameters();
+         zipParameters.setEncryptFiles(true);
+         zipParameters.setCompressionLevel(CompressionLevel.MAXIMUM);
+@@ -202,8 +203,10 @@ public void EncryptFile( File file) throws ZipException {
+             //zipFile.addFile(new File("/home/ntu-user/App/"+owner+"/"+ file_name), zipParameters);
+             zipFile.addFile(new File(file.getParent()+"/"+file.getName()), zipParameters);
+             
++           //filetoSplit= zipFile.getFile();
++           
+             
+-            System.out.println("File zipped with success");
++            System.out.println("File zipped with success" );
+         }
+         catch(Exception e) 
+         {
+@@ -238,18 +241,18 @@ public void DecryptFile( File file) throws ZipException {
+     
+ }
+ 
+-public List<File> SpitFile (File file) throws IOException{
+-int counter = 1;
++public List<File> FileChunking (File file) throws IOException{
++    int counter = 1;
+     List<File> files = new ArrayList<File>();
+     //int sizeOfChunk = 0;
+-    File FileToSpit= file.getCanonicalFile();
+-    long size =FileToSpit.length();
++    File FileToSplit=  new File(file.getParent()+"/"+file.getName()+".zip");
++    long size =FileToSplit.length();
+     long sizeOfChunk=size/4;
+     String eof = System.lineSeparator();
+-    try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+-        String name = file.getName();
++    try (BufferedReader br = new BufferedReader(new FileReader(FileToSplit))) {
++        String name = FileToSplit.getName();
+         String line = br.readLine();
+-        while (line != null) {
++        while (line != null && counter<5) {
+             File newFile = new File(file.getParent(), name + "."
+                     + String.format("%03d", counter++));
+             try (OutputStream out = new BufferedOutputStream(new FileOutputStream(newFile))) {
+@@ -264,7 +267,7 @@ int counter = 1;
+                 }
+             }
+             files.add(newFile);
+-            System.out.println("File has been splited"+newFile);
++            System.out.println("File has been splited "+newFile);
+         }
+     }
+     return files;
+
+commit e048a3af11e78e6c73de52906f7c78d4103f9a25
+Author: ntu-user <ntu-user@ntu.ac.uk>
+Date:   Sat Dec 23 21:01:07 2023 +0000
+
+    modified file encryption and decryption methods to accept File type instead of string
+
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/App.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/App.java
+index 6f0d291..6cc2214 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/App.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/App.java
+@@ -21,7 +21,7 @@ public class App extends Application {
+         DB myObj = new DB();
+         myObj.log("-------- Simple Tutorial on how to make JDBC connection to SQLite DB ------------");
+         
+-       // /*
++        /*
+         myObj.log("\n---------- Drop  Users table ----------");
+         try {
+             myObj.delTable(myObj.getTableName());
+@@ -35,7 +35,7 @@ public class App extends Application {
+             Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+         }
+         
+-       // */
++        */
+         
+         myObj.log("\n---------- Create  Users table ----------");
+         try {
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+index 33101cd..32a8d77 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+@@ -4,9 +4,17 @@
+  */
+ package com.mycompany.javafxapplication1;
+ 
++import java.io.BufferedOutputStream;
++import java.io.BufferedReader;
+ import java.io.File;
++import java.io.FileOutputStream;
++import java.io.FileReader;
+ import java.io.IOException;
++import java.io.OutputStream;
++import java.nio.charset.Charset;
+ import java.nio.file.StandardCopyOption;
++import java.util.ArrayList;
++import java.util.List;
+ import java.util.Optional;
+ import net.lingala.zip4j.ZipFile;
+ import net.lingala.zip4j.exception.ZipException;
+@@ -155,10 +163,11 @@ if (!userdir.exists()){
+         
+         fileTableView.setItems(data);
+         fileTableView.getColumns().addAll(owner_show,file_name_show,file_path_show,file_size_show,creation_date_show);
+-         EncryptFile(file_name,owner);
++         EncryptFile(newFile);
+          
+          newFile.delete();
+-        DecryptFile(file_name,owner);
++        DecryptFile(newFile);
++        //SpitFile(file);
+         }
+ 
+         }
+@@ -181,15 +190,17 @@ private void dialogue(String headerMsg, String contentMsg) {
+         Optional<ButtonType> result = alert.showAndWait();
+     }
+ 
+-public void EncryptFile( String file_name,String owner) throws ZipException {
++public void EncryptFile( File file) throws ZipException {
+ 
+     ZipParameters zipParameters = new ZipParameters();
+         zipParameters.setEncryptFiles(true);
+         zipParameters.setCompressionLevel(CompressionLevel.MAXIMUM);
+         zipParameters.setEncryptionMethod(EncryptionMethod.AES);
+         try{
+-            ZipFile zipFile = new ZipFile("/home/ntu-user/App/"+owner+"/"+file_name+".zip", "password".toCharArray());
+-            zipFile.addFile(new File("/home/ntu-user/App/"+owner+"/"+ file_name), zipParameters);
++            //ZipFile zipFile = new ZipFile("/home/ntu-user/App/"+owner+"/"+file_name+".zip", "password".toCharArray());
++            ZipFile zipFile = new ZipFile(file.getParent()+"/"+file.getName()+".zip", "password".toCharArray());
++            //zipFile.addFile(new File("/home/ntu-user/App/"+owner+"/"+ file_name), zipParameters);
++            zipFile.addFile(new File(file.getParent()+"/"+file.getName()), zipParameters);
+             
+             
+             System.out.println("File zipped with success");
+@@ -204,15 +215,17 @@ public void EncryptFile( String file_name,String owner) throws ZipException {
+ }
+ 
+ 
+-public void DecryptFile( String file_name,String owner) throws ZipException {
++public void DecryptFile( File file) throws ZipException {
+ 
+     ZipParameters zipParameters = new ZipParameters();
+         zipParameters.setEncryptFiles(true);
+         zipParameters.setCompressionLevel(CompressionLevel.MAXIMUM);
+         zipParameters.setEncryptionMethod(EncryptionMethod.AES);
+         try{
+-            ZipFile zipFile = new ZipFile("/home/ntu-user/App/"+owner+"/"+file_name+".zip", "password".toCharArray());
+-            zipFile.extractAll("/home/ntu-user/App/"+owner);
++            //ZipFile zipFile = new ZipFile("/home/ntu-user/App/"+owner+"/"+file_name+".zip", "password".toCharArray());
++            ZipFile zipFile = new ZipFile(file.getParent()+"/"+file.getName()+".zip", "password".toCharArray());
++            //zipFile.extractAll("/home/ntu-user/App/"+owner);
++            zipFile.extractAll(file.getParent());
+             //zipFile.removeFile(file_name+".zip");
+             System.out.println("File unzipped with success");
+         }
+@@ -225,5 +238,38 @@ public void DecryptFile( String file_name,String owner) throws ZipException {
+     
+ }
+ 
++public List<File> SpitFile (File file) throws IOException{
++int counter = 1;
++    List<File> files = new ArrayList<File>();
++    //int sizeOfChunk = 0;
++    File FileToSpit= file.getCanonicalFile();
++    long size =FileToSpit.length();
++    long sizeOfChunk=size/4;
++    String eof = System.lineSeparator();
++    try (BufferedReader br = new BufferedReader(new FileReader(file))) {
++        String name = file.getName();
++        String line = br.readLine();
++        while (line != null) {
++            File newFile = new File(file.getParent(), name + "."
++                    + String.format("%03d", counter++));
++            try (OutputStream out = new BufferedOutputStream(new FileOutputStream(newFile))) {
++                long fileSize = 0;
++                while (line != null) {
++                    byte[] bytes = (line + eof).getBytes(Charset.defaultCharset());
++                    if (fileSize + bytes.length > sizeOfChunk)
++                        break;
++                    out.write(bytes);
++                    fileSize += bytes.length;
++                    line = br.readLine();
++                }
++            }
++            files.add(newFile);
++            System.out.println("File has been splited"+newFile);
++        }
++    }
++    return files;
++    
++}
++
+     
+ }
+
+commit 0117acf4d7703d1f034da00fe31492eb8d49b2f9
+Author: ntu-user <ntu-user@ntu.ac.uk>
+Date:   Wed Dec 20 23:46:07 2023 +0000
+
+    added file encryption and decryption methods
+
+diff --git a/JavaFXApplication1/pom.xml b/JavaFXApplication1/pom.xml
+index 2537a1f..361b4b0 100644
+--- a/JavaFXApplication1/pom.xml
++++ b/JavaFXApplication1/pom.xml
+@@ -40,6 +40,12 @@
+             <artifactId>sqlite-jdbc</artifactId>
+             <version>3.40.0.0</version>
+         </dependency>
++        <dependency>
++            <groupId>net.lingala.zip4j</groupId>
++            <artifactId>zip4j</artifactId>
++            <version>2.11.5</version>
++            <type>jar</type>
++        </dependency>
+     </dependencies>
+     <build>
+         <plugins>
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+index 0878ab0..33101cd 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+@@ -8,6 +8,11 @@ import java.io.File;
+ import java.io.IOException;
+ import java.nio.file.StandardCopyOption;
+ import java.util.Optional;
++import net.lingala.zip4j.ZipFile;
++import net.lingala.zip4j.exception.ZipException;
++import net.lingala.zip4j.model.ZipParameters;
++import net.lingala.zip4j.model.enums.CompressionLevel;
++import net.lingala.zip4j.model.enums.EncryptionMethod;
+ import javafx.collections.ObservableList;
+ import javafx.event.ActionEvent;
+ import javafx.fxml.FXML;
+@@ -150,6 +155,10 @@ if (!userdir.exists()){
+         
+         fileTableView.setItems(data);
+         fileTableView.getColumns().addAll(owner_show,file_name_show,file_path_show,file_size_show,creation_date_show);
++         EncryptFile(file_name,owner);
++         
++         newFile.delete();
++        DecryptFile(file_name,owner);
+         }
+ 
+         }
+@@ -171,5 +180,50 @@ private void dialogue(String headerMsg, String contentMsg) {
+ 
+         Optional<ButtonType> result = alert.showAndWait();
+     }
++
++public void EncryptFile( String file_name,String owner) throws ZipException {
++
++    ZipParameters zipParameters = new ZipParameters();
++        zipParameters.setEncryptFiles(true);
++        zipParameters.setCompressionLevel(CompressionLevel.MAXIMUM);
++        zipParameters.setEncryptionMethod(EncryptionMethod.AES);
++        try{
++            ZipFile zipFile = new ZipFile("/home/ntu-user/App/"+owner+"/"+file_name+".zip", "password".toCharArray());
++            zipFile.addFile(new File("/home/ntu-user/App/"+owner+"/"+ file_name), zipParameters);
++            
++            
++            System.out.println("File zipped with success");
++        }
++        catch(Exception e) 
++        {
++            e.printStackTrace();
++            
++        }
++
++    
++}
++
++
++public void DecryptFile( String file_name,String owner) throws ZipException {
++
++    ZipParameters zipParameters = new ZipParameters();
++        zipParameters.setEncryptFiles(true);
++        zipParameters.setCompressionLevel(CompressionLevel.MAXIMUM);
++        zipParameters.setEncryptionMethod(EncryptionMethod.AES);
++        try{
++            ZipFile zipFile = new ZipFile("/home/ntu-user/App/"+owner+"/"+file_name+".zip", "password".toCharArray());
++            zipFile.extractAll("/home/ntu-user/App/"+owner);
++            //zipFile.removeFile(file_name+".zip");
++            System.out.println("File unzipped with success");
++        }
++        catch(Exception e) 
++        {
++            e.printStackTrace();
++            
++        }
++
++    
++}
++
+     
+ }
+diff --git a/JavaFXApplication1/src/main/java/module-info.java b/JavaFXApplication1/src/main/java/module-info.java
+index bec8c9d..cc3e430 100644
+--- a/JavaFXApplication1/src/main/java/module-info.java
++++ b/JavaFXApplication1/src/main/java/module-info.java
+@@ -7,4 +7,5 @@ module com.mycompany.javafxapplication1 {
+ 
+     opens com.mycompany.javafxapplication1 to javafx.fxml;
+     exports com.mycompany.javafxapplication1;
++    requires zip4j;
+ }
+
+commit f6ba51fcc8f1ae6990e09d1baee60b87d518de1e
+Author: ntu-user <ntu-user@ntu.ac.uk>
+Date:   Wed Dec 20 21:53:31 2023 +0000
+
+    added file creation timestamp to table view and fix columns getting duplicated
+
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+index 397c6d0..a01ceef 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
+ import java.security.NoSuchAlgorithmException;
+ import java.security.SecureRandom;
+ import java.security.spec.InvalidKeySpecException;
++import java.sql.Timestamp;
+ import java.time.LocalDateTime;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+@@ -386,7 +387,7 @@ public class DB {
+             ResultSet rs = statement.executeQuery("select * from " + this.FileTableName + " where owner= "+ "\""+user+ "\"");
+             while (rs.next()) {
+                 // read the result set
+-               result.add(new Files(rs.getString("owner"),rs.getString("file_name"),rs.getString("file_path"),rs.getInt("file_size")));
++               result.add(new Files(rs.getString("owner"),rs.getString("file_name"),rs.getString("file_path"),rs.getInt("file_size"),rs.getTimestamp("creation_date")));
+                //result.add(rs.getDate("creation_date"));
+                 //rs.getNString('owner')
+             }
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/Files.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/Files.java
+index e19bfe6..2739cc4 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/Files.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/Files.java
+@@ -6,6 +6,7 @@ package com.mycompany.javafxapplication1;
+ 
+ import java.io.File;
+ import java.sql.Date;
++import java.sql.Timestamp;
+ import javafx.beans.property.ObjectProperty;
+ import javafx.beans.property.SimpleIntegerProperty;
+ import javafx.beans.property.SimpleObjectProperty;
+@@ -20,14 +21,14 @@ public class Files  {
+     private SimpleStringProperty file_name;
+     private SimpleStringProperty file_path;
+     private SimpleIntegerProperty file_size;
+-   // private  ObjectProperty<Date> creation_date;
++    private  ObjectProperty<Timestamp> creation_date;
+ 
+     
+     
+     
+ 
+-    Files(String owner, String file_name,String file_path, int file_size) {
+-        //this.creation_date = new SimpleObjectProperty<>(this, "creation_date");
++    Files(String owner, String file_name,String file_path, int file_size,Timestamp creation_date ) {
++        this.creation_date = new SimpleObjectProperty(creation_date);
+         this.owner = new SimpleStringProperty(owner);
+         this.file_name = new SimpleStringProperty(file_name);
+         this.file_path = new SimpleStringProperty(file_path);
+@@ -67,14 +68,14 @@ public class Files  {
+         this.file_size.set(file_size);
+     }
+     
+-    /*
+-    public Date getcreation_date() {
++    
++    public Timestamp getCreation_date() {
+         return creation_date.get();
+     }
+ 
+-    public void setfile_size(Date creation_date) {
++    public void setCreation_date(Timestamp creation_date) {
+         this.creation_date.set(creation_date);
+     }
+ 
+-*/
++
+ }
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+index 8d35333..0878ab0 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+@@ -50,7 +50,35 @@ public class UploadFileController {
+     try {
+             
+         userTextField.setText(nameTextField.toString());
+-            
++            DB myobj = new DB();
++            fileTableView.getColumns().clear();
++            fileTableView.getItems().clear();
++        ObservableList<Files> data;
++        data = myobj.getUserFilesFromTable(userTextField.getText());
++        
++        if(!data.isEmpty()){
++        TableColumn owner_show = new TableColumn("Owner");
++        owner_show.setCellValueFactory(
++        new PropertyValueFactory<>("owner"));
++
++        TableColumn file_name_show = new TableColumn("File_name");
++        file_name_show.setCellValueFactory(
++            new PropertyValueFactory<>("file_name"));
++        
++        TableColumn file_path_show = new TableColumn("File_path");
++        file_path_show.setCellValueFactory(
++            new PropertyValueFactory<>("file_path"));
++        
++        TableColumn file_size_show = new TableColumn("File_size");
++        file_size_show.setCellValueFactory(
++            new PropertyValueFactory<>("file_size"));
++        TableColumn creation_date_show = new TableColumn("Creation_date");
++        creation_date_show.setCellValueFactory(
++            new PropertyValueFactory<>("creation_date"));
++        
++        fileTableView.setItems(data);
++        fileTableView.getColumns().addAll(owner_show,file_name_show,file_path_show,file_size_show,creation_date_show);
++        }
+         
+             
+ 
+@@ -95,7 +123,8 @@ if (!userdir.exists()){
+         
+        dialogue("Upload Confirmation","File "+file.getName()+" has been uploaded successfully");
+        
+-       //DB myObj = new DB();
++            fileTableView.getColumns().clear();
++            fileTableView.getItems().clear();
+         ObservableList<Files> data;
+         data = myobj.getUserFilesFromTable(userTextField.getText());
+         
+@@ -115,9 +144,12 @@ if (!userdir.exists()){
+         TableColumn file_size_show = new TableColumn("File_size");
+         file_size_show.setCellValueFactory(
+             new PropertyValueFactory<>("file_size"));
++        TableColumn creation_date_show = new TableColumn("Creation_date");
++        creation_date_show.setCellValueFactory(
++            new PropertyValueFactory<>("creation_date"));
+         
+         fileTableView.setItems(data);
+-        fileTableView.getColumns().addAll(owner_show,file_name_show,file_path_show,file_size_show);
++        fileTableView.getColumns().addAll(owner_show,file_name_show,file_path_show,file_size_show,creation_date_show);
+         }
+ 
+         }
+
+commit 6f7991f1eb19deac020f2a9c42c2b33746c296d7
+Author: ntu-user <ntu-user@ntu.ac.uk>
+Date:   Tue Dec 19 23:23:44 2023 +0000
+
+    added files class and display details of file uploaded by user
+
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/App.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/App.java
+index 68b4da5..6f0d291 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/App.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/App.java
+@@ -20,6 +20,8 @@ public class App extends Application {
+         Stage secondaryStage = new Stage();
+         DB myObj = new DB();
+         myObj.log("-------- Simple Tutorial on how to make JDBC connection to SQLite DB ------------");
++        
++       // /*
+         myObj.log("\n---------- Drop  Users table ----------");
+         try {
+             myObj.delTable(myObj.getTableName());
+@@ -33,6 +35,8 @@ public class App extends Application {
+             Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+         }
+         
++       // */
++        
+         myObj.log("\n---------- Create  Users table ----------");
+         try {
+             myObj.createTable(myObj.getTableName());
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+index b59deb5..397c6d0 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+@@ -368,6 +368,45 @@ public class DB {
+         return result;
+     }
+     
++    
++    /**
++     * @brief   get user files data from the Database method
++     *  @param user
++     * @return result 
++     */
++       
++    
++    public ObservableList<Files>  getUserFilesFromTable(String user) throws ClassNotFoundException {
++        ObservableList<Files> result = FXCollections.observableArrayList();
++        try {
++            Class.forName("org.sqlite.JDBC");
++            connection = DriverManager.getConnection(fileName);
++            var statement = connection.createStatement();
++            statement.setQueryTimeout(timeout);
++            ResultSet rs = statement.executeQuery("select * from " + this.FileTableName + " where owner= "+ "\""+user+ "\"");
++            while (rs.next()) {
++                // read the result set
++               result.add(new Files(rs.getString("owner"),rs.getString("file_name"),rs.getString("file_path"),rs.getInt("file_size")));
++               //result.add(rs.getDate("creation_date"));
++                //rs.getNString('owner')
++            }
++            
++        } catch (SQLException ex) {
++            Logger.getLogger(DB.class.getName()).log(Level.SEVERE, null, ex);
++        } finally {
++            try {
++                if (connection != null) {
++                    connection.close();
++                }
++            } catch (SQLException e) {
++                // connection close failed.
++                System.err.println(e.getMessage());
++            }
++        }
++        return result;
++    }
++    
++    
+ 
+     /**
+      * @brief decode password method
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/Files.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/Files.java
+new file mode 100644
+index 0000000..e19bfe6
+--- /dev/null
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/Files.java
+@@ -0,0 +1,80 @@
++/*
++ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
++ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
++ */
++package com.mycompany.javafxapplication1;
++
++import java.io.File;
++import java.sql.Date;
++import javafx.beans.property.ObjectProperty;
++import javafx.beans.property.SimpleIntegerProperty;
++import javafx.beans.property.SimpleObjectProperty;
++import javafx.beans.property.SimpleStringProperty;
++
++/**
++ *
++ * @author ntu-user
++ */
++public class Files  {
++    private SimpleStringProperty owner;
++    private SimpleStringProperty file_name;
++    private SimpleStringProperty file_path;
++    private SimpleIntegerProperty file_size;
++   // private  ObjectProperty<Date> creation_date;
++
++    
++    
++    
++
++    Files(String owner, String file_name,String file_path, int file_size) {
++        //this.creation_date = new SimpleObjectProperty<>(this, "creation_date");
++        this.owner = new SimpleStringProperty(owner);
++        this.file_name = new SimpleStringProperty(file_name);
++        this.file_path = new SimpleStringProperty(file_path);
++        this.file_size = new SimpleIntegerProperty(file_size);
++        
++    }
++
++    public String getOwner() {
++        return owner.get();
++    }
++
++    public void setOwner(String owner) {
++        this.owner.set(owner);
++    }
++
++    public String getFile_name() {
++        return file_name.get();
++    }
++
++    public void setFile_name(String file_name) {
++        this.file_name.set(file_name);
++    }
++    
++    public String getFile_path() {
++        return file_path.get();
++    }
++
++    public void setFile_path(String file_path) {
++        this.file_path.set(file_path);
++    }
++
++    public int getFile_size() {
++        return file_size.get();
++    }
++
++    public void setFile_size(int file_size) {
++        this.file_size.set(file_size);
++    }
++    
++    /*
++    public Date getcreation_date() {
++        return creation_date.get();
++    }
++
++    public void setfile_size(Date creation_date) {
++        this.creation_date.set(creation_date);
++    }
++
++*/
++}
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+index a279e38..8d35333 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+@@ -8,6 +8,7 @@ import java.io.File;
+ import java.io.IOException;
+ import java.nio.file.StandardCopyOption;
+ import java.util.Optional;
++import javafx.collections.ObservableList;
+ import javafx.event.ActionEvent;
+ import javafx.fxml.FXML;
+ import javafx.scene.Group;
+@@ -15,8 +16,10 @@ import javafx.scene.Scene;
+ import javafx.scene.control.Alert;
+ import javafx.scene.control.Button;
+ import javafx.scene.control.ButtonType;
++import javafx.scene.control.TableColumn;
+ import javafx.scene.control.TableView;
+ import javafx.scene.control.TextField;
++import javafx.scene.control.cell.PropertyValueFactory;
+ import javafx.scene.paint.Color;
+ import javafx.scene.text.Text;
+ import javafx.stage.FileChooser;
+@@ -49,6 +52,7 @@ public class UploadFileController {
+         userTextField.setText(nameTextField.toString());
+             
+         
++            
+ 
+         } catch (Exception e) {
+             e.printStackTrace();
+@@ -87,9 +91,34 @@ if (!userdir.exists()){
+     
+     DB myobj =new DB();
+     
+-    myobj.addDataToFileDB(owner, file_name, file_size, file_path);
++    myobj.addDataToFileDB(owner,file_name,file_size,file_path);
+         
+        dialogue("Upload Confirmation","File "+file.getName()+" has been uploaded successfully");
++       
++       //DB myObj = new DB();
++        ObservableList<Files> data;
++        data = myobj.getUserFilesFromTable(userTextField.getText());
++        
++        if(!data.isEmpty()){
++        TableColumn owner_show = new TableColumn("Owner");
++        owner_show.setCellValueFactory(
++        new PropertyValueFactory<>("owner"));
++
++        TableColumn file_name_show = new TableColumn("File_name");
++        file_name_show.setCellValueFactory(
++            new PropertyValueFactory<>("file_name"));
++        
++        TableColumn file_path_show = new TableColumn("File_path");
++        file_path_show.setCellValueFactory(
++            new PropertyValueFactory<>("file_path"));
++        
++        TableColumn file_size_show = new TableColumn("File_size");
++        file_size_show.setCellValueFactory(
++            new PropertyValueFactory<>("file_size"));
++        
++        fileTableView.setItems(data);
++        fileTableView.getColumns().addAll(owner_show,file_name_show,file_path_show,file_size_show);
++        }
+ 
+         }
+         }
+
+commit 3756a28f1fa7eddee60c1e820a0e2ef666f42b21
+Author: ntu-user <ntu-user@ntu.ac.uk>
+Date:   Tue Dec 19 20:07:03 2023 +0000
+
+    added method to save file details into the database
+
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+index 4840579..b59deb5 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
+ import java.security.NoSuchAlgorithmException;
+ import java.security.SecureRandom;
+ import java.security.spec.InvalidKeySpecException;
++import java.time.LocalDateTime;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.List;
+@@ -108,7 +109,7 @@ public class DB {
+             connection = DriverManager.getConnection(fileName);
+             var statement = connection.createStatement();
+             statement.setQueryTimeout(timeout);
+-            statement.executeUpdate("create table if not exists " + tableName + "(id integer primary key autoincrement, owner string, file_name string,file_size integer,creation_date TIMESTAMP,modification_date TIMESTAMP,file_path string)");
++            statement.executeUpdate("create table if not exists " + tableName + "(id integer primary key autoincrement, owner string, file_name string,file_size integer,creation_date DATETIME DEFAULT CURRENT_TIMESTAMP,modification_date TIMESTAMP,file_path string)");
+ 
+         } catch (SQLException ex) {
+             Logger.getLogger(DB.class.getName()).log(Level.SEVERE, null, ex);
+@@ -187,6 +188,46 @@ public class DB {
+     }
+ 
+         
++        /**
++     * @brief save file to the database method
++     * @param user name of type String
++     * @param file_name of type String
++     * @param file_size of type int
++     * @param file_path of type String
++     */
++        public void addDataToFileDB(String user, String file_name,int file_size,String file_path) throws InvalidKeySpecException, ClassNotFoundException {
++        try {
++            Class.forName("org.sqlite.JDBC");
++            connection = DriverManager.getConnection(fileName);
++            var statement = connection.createStatement();
++            statement.setQueryTimeout(timeout);
++//            System.out.println("Adding User: " + user + ", Password: " + password);
++            statement.executeUpdate("insert into " + FileTableName + " (owner, file_name,file_size, file_path) values('" + user + "','" + file_name + "','" + file_size + "','" + file_path + "')");
++        } catch (SQLException ex) {
++            Logger.getLogger(DB.class.getName()).log(Level.SEVERE, null, ex);
++        } finally {
++            try {
++                if (connection != null) {
++                    connection.close();
++                }
++            } catch (SQLException ex) {
++                Logger.getLogger(DB.class.getName()).log(Level.SEVERE, null, ex);
++            } finally {
++                try {
++                    if (connection != null) {
++                        connection.close();
++                    }
++                } catch (SQLException e) {
++                    // connection close failed.
++                    System.err.println(e.getMessage());
++                }
++            }
++        }
++    }
++
++        
++        
++        
+           /**
+      * @brief delete user data from the database method
+      * @param user name of type String
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+index 7741179..a279e38 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+@@ -70,9 +70,24 @@ public class UploadFileController {
+             
+     File file = selectedFile.getCanonicalFile();
+     
++    String file_name=file.getName();
++    String owner=userTextField.getText();
++    int file_size=(int)file.length();
++    
++    File userdir = new File("/home/ntu-user/App/"+owner);
++if (!userdir.exists()){
++    userdir.mkdirs();
++}
+ 
+-    File newFile = new File("/home/ntu-user/App/" + file.getName());
++    File newFile = new File("/home/ntu-user/App/"+owner +"/"+ file_name);
+     java.nio.file.Files.copy(file.toPath(),newFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
++    
++    String file_path= newFile.getPath();
++    //System.out.println(file_path);
++    
++    DB myobj =new DB();
++    
++    myobj.addDataToFileDB(owner, file_name, file_size, file_path);
+         
+        dialogue("Upload Confirmation","File "+file.getName()+" has been uploaded successfully");
+ 
+diff --git a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/register.fxml b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/register.fxml
+index 8dab8b3..37bc0d4 100644
+--- a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/register.fxml
++++ b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/register.fxml
+@@ -8,7 +8,6 @@
+ <?import javafx.scene.layout.ColumnConstraints?>
+ <?import javafx.scene.layout.GridPane?>
+ <?import javafx.scene.layout.RowConstraints?>
+-<?import javafx.scene.text.Text?>
+ 
+ <AnchorPane id="AnchorPane" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycompany.javafxapplication1.RegisterController">
+    <children>
+@@ -34,7 +33,6 @@
+             <TextField fx:id="userTextField" GridPane.columnIndex="1" />
+             <PasswordField fx:id="passPasswordField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+             <PasswordField fx:id="rePassPasswordField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+-            <Text fx:id="fileText" strokeType="OUTSIDE" strokeWidth="0.0" text="Select File." GridPane.rowIndex="4" />
+          </children>
+       </GridPane>
+       <Label layoutX="272.0" layoutY="94.0" text="Register New User" />
+
+commit e5450eb70a58ebce9257a94160a8549319883eb4
+Author: ntu-user <ntu-user@ntu.ac.uk>
+Date:   Sun Dec 17 16:18:37 2023 +0000
+
+    Added files table for file information persistence
+
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/App.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/App.java
+index d38a57d..68b4da5 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/App.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/App.java
+@@ -20,18 +20,32 @@ public class App extends Application {
+         Stage secondaryStage = new Stage();
+         DB myObj = new DB();
+         myObj.log("-------- Simple Tutorial on how to make JDBC connection to SQLite DB ------------");
+-        myObj.log("\n---------- Drop table ----------");
++        myObj.log("\n---------- Drop  Users table ----------");
+         try {
+             myObj.delTable(myObj.getTableName());
+         } catch (ClassNotFoundException ex) {
+             Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+         }
+-        myObj.log("\n---------- Create table ----------");
++        myObj.log("\n---------- Drop  Files table ----------");
++        try {
++            myObj.delTable(myObj.getFilesTableName());
++        } catch (ClassNotFoundException ex) {
++            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
++        }
++        
++        myObj.log("\n---------- Create  Users table ----------");
+         try {
+             myObj.createTable(myObj.getTableName());
+         } catch (ClassNotFoundException ex) {
+             Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+         }
++        myObj.log("\n---------- Create  Files table ----------");
++        try {
++            myObj.createFileTable(myObj.getFilesTableName());
++        } catch (ClassNotFoundException ex) {
++            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
++        }
++        
+         try {
+             FXMLLoader loader = new FXMLLoader();
+             loader.setLocation(getClass().getResource("primary.fxml"));
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+index 162fd95..4840579 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+@@ -39,6 +39,7 @@ public class DB {
+     private int timeout = 30;
+     private String dataBaseName = "COMP20081";
+     private String dataBaseTableName = "Users";
++    private String FileTableName="Files";
+     Connection connection = null;
+     private Random random = new SecureRandom();
+     private String characters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+@@ -94,6 +95,35 @@ public class DB {
+             }
+         }
+     }
++    
++    
++     /**
++     * @brief create a new table for files
++     * @param tableName name of type String
++     */
++    public void createFileTable(String tableName) throws ClassNotFoundException {
++        try {
++            // create a database connection
++            Class.forName("org.sqlite.JDBC");
++            connection = DriverManager.getConnection(fileName);
++            var statement = connection.createStatement();
++            statement.setQueryTimeout(timeout);
++            statement.executeUpdate("create table if not exists " + tableName + "(id integer primary key autoincrement, owner string, file_name string,file_size integer,creation_date TIMESTAMP,modification_date TIMESTAMP,file_path string)");
++
++        } catch (SQLException ex) {
++            Logger.getLogger(DB.class.getName()).log(Level.SEVERE, null, ex);
++        } finally {
++            try {
++                if (connection != null) {
++                    connection.close();
++                }
++            } catch (SQLException e) {
++                // connection close failed.
++                System.err.println(e.getMessage());
++            }
++        }
++    }
++    
+ 
+     /**
+      * @brief delete table
+@@ -377,6 +407,14 @@ public class DB {
+     public String getTableName() {
+         return this.dataBaseTableName;
+     }
++    
++    /**
++     * @brief get Filestable name
++     * @return table name as String
++     */
++    public String getFilesTableName() {
++        return this.FileTableName;
++    }
+ 
+     /**
+      * @brief print a message on screen method
+
+commit a98da0ea7c8b46ebf437bd4a331201abc43953a1
+Author: ntu-user <ntu-user@ntu.ac.uk>
+Date:   Sun Dec 17 16:16:12 2023 +0000
+
+    Removed file upload functionality from Registration Screen
+
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/RegisterController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/RegisterController.java
+index 05e4159..ca97107 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/RegisterController.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/RegisterController.java
+@@ -55,6 +55,9 @@ public class RegisterController {
+     @FXML
+     private Button selectBtn;
+     
++    
++    // came with initial code
++    /*
+     @FXML
+     private void selectBtnHandler(ActionEvent event) throws IOException {
+         Stage primaryStage = (Stage) selectBtn.getScene().getWindow();
+@@ -69,6 +72,7 @@ public class RegisterController {
+         }
+         
+     }
++*/
+ 
+     private void dialogue(String headerMsg, String contentMsg) {
+         Stage secondaryStage = new Stage();
+diff --git a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/register.fxml b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/register.fxml
+index cf5674f..8dab8b3 100644
+--- a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/register.fxml
++++ b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/register.fxml
+@@ -1,13 +1,16 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ 
+-<?import javafx.scene.text.*?>
+-<?import java.lang.*?>
+-<?import java.util.*?>
+-<?import javafx.scene.*?>
+-<?import javafx.scene.control.*?>
+-<?import javafx.scene.layout.*?>
++<?import javafx.scene.control.Button?>
++<?import javafx.scene.control.Label?>
++<?import javafx.scene.control.PasswordField?>
++<?import javafx.scene.control.TextField?>
++<?import javafx.scene.layout.AnchorPane?>
++<?import javafx.scene.layout.ColumnConstraints?>
++<?import javafx.scene.layout.GridPane?>
++<?import javafx.scene.layout.RowConstraints?>
++<?import javafx.scene.text.Text?>
+ 
+-<AnchorPane id="AnchorPane" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycompany.javafxapplication1.RegisterController">
++<AnchorPane id="AnchorPane" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycompany.javafxapplication1.RegisterController">
+    <children>
+       <GridPane alignment="CENTER" layoutY="124.0" prefHeight="126.0" prefWidth="600.0">
+         <columnConstraints>
+@@ -31,7 +34,6 @@
+             <TextField fx:id="userTextField" GridPane.columnIndex="1" />
+             <PasswordField fx:id="passPasswordField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+             <PasswordField fx:id="rePassPasswordField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+-            <Button fx:id="selectBtn" mnemonicParsing="false" onAction="#selectBtnHandler" text="Select File Name" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="3" />
+             <Text fx:id="fileText" strokeType="OUTSIDE" strokeWidth="0.0" text="Select File." GridPane.rowIndex="4" />
+          </children>
+       </GridPane>
+
+commit 600d7a579616ba8bbbdcdef41ee6892d80d20e74
+Author: ntu-user <ntu-user@ntu.ac.uk>
+Date:   Sun Dec 17 14:39:04 2023 +0000
+
+    Upload file functionality initial stage
+
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/SecondaryController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/SecondaryController.java
+index 7044d3a..31d5b8f 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/SecondaryController.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/SecondaryController.java
+@@ -44,6 +44,9 @@ public class SecondaryController {
+     @FXML
+     private Button delUserBtn;
+     
++    @FXML
++    private Button uploadfilehandlerbtn;
++    
+     @FXML
+     private void RefreshBtnHandler(ActionEvent event){
+         Stage primaryStage = (Stage) customTextField.getScene().getWindow();
+@@ -123,6 +126,40 @@ public class SecondaryController {
+         
+        
+         
++    }
++    
++    
++    @FXML
++    private void UploadfileBtnHandler(ActionEvent event) {
++        Stage UploadfileStage = new Stage();
++       Stage secondaryStage = (Stage) delUserBtn.getScene().getWindow();
++        try {
++           
++            User edituser=(User) dataTableView.getSelectionModel().getSelectedItem();
++          
++            // System.out.println(edituser.getUser());
++             String name=edituser.getUser();
++            
++            FXMLLoader loader = new FXMLLoader();
++            
++            
++             loader.setLocation(getClass().getResource("UploadFile.fxml"));
++                Parent root = loader.load();
++                Scene scene = new Scene(root, 640, 480);
++                UploadfileStage.setScene(scene);
++                UploadfileStage.setTitle("Upload and Download files");
++           
++            UploadFileController uploadFileController = loader.getController();
++            uploadFileController.initialize(name);
++            UploadfileStage.show();
++            secondaryStage.close();
++
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++        
++       
++        
+     }
+     
+     
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+new file mode 100644
+index 0000000..7741179
+--- /dev/null
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/UploadFileController.java
+@@ -0,0 +1,99 @@
++/*
++ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
++ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
++ */
++package com.mycompany.javafxapplication1;
++
++import java.io.File;
++import java.io.IOException;
++import java.nio.file.StandardCopyOption;
++import java.util.Optional;
++import javafx.event.ActionEvent;
++import javafx.fxml.FXML;
++import javafx.scene.Group;
++import javafx.scene.Scene;
++import javafx.scene.control.Alert;
++import javafx.scene.control.Button;
++import javafx.scene.control.ButtonType;
++import javafx.scene.control.TableView;
++import javafx.scene.control.TextField;
++import javafx.scene.paint.Color;
++import javafx.scene.text.Text;
++import javafx.stage.FileChooser;
++import javafx.stage.Stage;
++
++
++/**
++ *
++ * @author ntu-user
++ */
++public class UploadFileController {
++    
++    @FXML
++    private  Button uploadbtn;
++     
++    @FXML
++    private TableView fileTableView;
++    
++    @FXML
++    private Text fileText;
++    
++     @FXML
++    private TextField userTextField;
++    
++    
++     @FXML
++    public void initialize(String nameTextField){
++    try {
++            
++        userTextField.setText(nameTextField.toString());
++            
++        
++
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++    
++    }
++    
++    
++     @FXML
++    private void Upload(ActionEvent event)throws IOException {
++        try{
++        Stage UploadfileStage = new Stage();
++        FileChooser fileChooser = new FileChooser();
++        fileChooser.setTitle("Open Resource File");
++       File selectedFile = fileChooser.showOpenDialog(UploadfileStage);
++       
++        
++        if(selectedFile!=null){
++            
++    File file = selectedFile.getCanonicalFile();
++    
++
++    File newFile = new File("/home/ntu-user/App/" + file.getName());
++    java.nio.file.Files.copy(file.toPath(),newFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
++        
++       dialogue("Upload Confirmation","File "+file.getName()+" has been uploaded successfully");
++
++        }
++        }
++       catch (Exception e) {
++            e.printStackTrace();
++        }
++    }
++
++private void dialogue(String headerMsg, String contentMsg) {
++        Stage editUserStage = new Stage();
++        Group root = new Group();
++        Scene scene = new Scene(root, 300, 300, Color.DARKGRAY);
++
++        Alert alert = new Alert(Alert.AlertType.INFORMATION);
++        alert.setTitle("Confirmation Dialog");
++        alert.setHeaderText(headerMsg);
++        alert.setContentText(contentMsg);
++
++        Optional<ButtonType> result = alert.showAndWait();
++    }
++    
++}
+diff --git a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/UploadFile.fxml b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/UploadFile.fxml
+new file mode 100644
+index 0000000..545b4c6
+--- /dev/null
++++ b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/UploadFile.fxml
+@@ -0,0 +1,50 @@
++<?xml version="1.0" encoding="UTF-8"?>
++
++<?import javafx.geometry.Insets?>
++<?import javafx.scene.control.Button?>
++<?import javafx.scene.control.Label?>
++<?import javafx.scene.control.TableView?>
++<?import javafx.scene.control.TextField?>
++<?import javafx.scene.layout.ColumnConstraints?>
++<?import javafx.scene.layout.GridPane?>
++<?import javafx.scene.layout.RowConstraints?>
++<?import javafx.scene.layout.VBox?>
++
++<VBox alignment="CENTER" prefHeight="407.0" prefWidth="639.0" spacing="20.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycompany.javafxapplication1.UploadFileController">
++    <children>
++        <Label text="Users List" />
++      <GridPane>
++        <columnConstraints>
++          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
++          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
++        </columnConstraints>
++        <rowConstraints>
++          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
++          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
++        </rowConstraints>
++         <children>
++            <Label text="Welcome" GridPane.halignment="CENTER" />
++            <TextField fx:id="userTextField" GridPane.columnIndex="1" />
++         </children>
++      </GridPane>
++      <TableView fx:id="fileTableView" prefHeight="200.0" prefWidth="200.0" />
++      <GridPane>
++        <columnConstraints>
++            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
++            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
++            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
++          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
++          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
++        </columnConstraints>
++        <rowConstraints>
++          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
++        </rowConstraints>
++         <children>
++            <Button fx:id="uploadbtn" mnemonicParsing="false" onAction="#Upload" text="Upload" GridPane.columnIndex="1" />
++         </children>
++      </GridPane>
++    </children>
++    <padding>
++        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
++    </padding>
++</VBox>
+diff --git a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/secondary.fxml b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/secondary.fxml
+index 13aac9d..66aa4ee 100644
+--- a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/secondary.fxml
++++ b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/secondary.fxml
+@@ -10,7 +10,7 @@
+ <?import javafx.scene.layout.RowConstraints?>
+ <?import javafx.scene.layout.VBox?>
+ 
+-<VBox alignment="CENTER" prefHeight="407.0" prefWidth="390.0" spacing="20.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycompany.javafxapplication1.SecondaryController">
++<VBox alignment="CENTER" prefHeight="407.0" prefWidth="639.0" spacing="20.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycompany.javafxapplication1.SecondaryController">
+     <children>
+         <Label text="Users List" />
+       <GridPane>
+@@ -34,6 +34,7 @@
+         <columnConstraints>
+             <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+             <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
++            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+           <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+           <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+         </columnConstraints>
+@@ -41,10 +42,11 @@
+           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+         </rowConstraints>
+          <children>
+-              <Button fx:id="secondaryButton" onAction="#switchToPrimary" text="Return to Login" GridPane.columnIndex="3" />
+-            <Button fx:id="refreshBtn" mnemonicParsing="false" onAction="#RefreshBtnHandler" text="Refresh" GridPane.columnIndex="2" />
+-            <Button fx:id="delUserBtn" mnemonicParsing="false" onAction="#deleteUser" text="Delete User" GridPane.columnIndex="1" />
+-            <Button fx:id="editUserbtn" mnemonicParsing="false" onAction="#editBtnHandler" text="Edit User" />
++              <Button fx:id="secondaryButton" onAction="#switchToPrimary" text="Return to Login" GridPane.columnIndex="4" />
++            <Button fx:id="refreshBtn" mnemonicParsing="false" onAction="#RefreshBtnHandler" text="Refresh" GridPane.columnIndex="3" />
++            <Button fx:id="delUserBtn" mnemonicParsing="false" onAction="#deleteUser" text="Delete User" GridPane.columnIndex="2" />
++            <Button fx:id="editUserbtn" mnemonicParsing="false" onAction="#editBtnHandler" text="Edit User" GridPane.columnIndex="1" />
++            <Button fx:id="uploadfilehandlerbtn" mnemonicParsing="false" onAction="#UploadfileBtnHandler" text="Upload File" />
+          </children>
+       </GridPane>
+     </children>
+
+commit 8412f4de840127f9622ae3735ebcc3dc11627d01
+Author: ntu-user <ntu-user@ntu.ac.uk>
+Date:   Sat Dec 16 15:07:18 2023 +0000
+
+    validation of old password before editing the password(correction of error msg)
+
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/EditUserController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/EditUserController.java
+index c5be489..5dc9176 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/EditUserController.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/EditUserController.java
+@@ -98,7 +98,7 @@ public class EditUserController  {
+             editUserStage.close();
+             
+             } else {
+-                dialogue("New password does not match for "+usernameTextField.getText(), "Error!");
++                dialogue("Passwords does not match for  "+usernameTextField.getText(), "Error!");
+             }
+             
+             
+
+commit a8977f4cb5b5cc4ee12ceed0203d14d6b1b2576d
+Author: ntu-user <ntu-user@ntu.ac.uk>
+Date:   Sat Dec 16 14:52:50 2023 +0000
+
+    validation of old password before editing the password
+
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+index ce360ac..162fd95 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+@@ -261,6 +261,42 @@ public class DB {
+         }
+         return result;
+     }
++    
++    /**
++     * @brief user Password get data from the Database method
++     *  @param user
++     * @return result 
++     */
++       
++    
++    public String getUserPassFromTable(String user) throws ClassNotFoundException {
++        String result = "";
++        try {
++            Class.forName("org.sqlite.JDBC");
++            connection = DriverManager.getConnection(fileName);
++            var statement = connection.createStatement();
++            statement.setQueryTimeout(timeout);
++            ResultSet rs = statement.executeQuery("select password from " + this.dataBaseTableName + " where name= "+ "\""+user+ "\"");
++            if (rs.isBeforeFirst()) {
++                 result=rs.getString("password");
++                 System.out.println(result);
++            }
++            
++        } catch (SQLException ex) {
++            Logger.getLogger(DB.class.getName()).log(Level.SEVERE, null, ex);
++        } finally {
++            try {
++                if (connection != null) {
++                    connection.close();
++                }
++            } catch (SQLException e) {
++                // connection close failed.
++                System.err.println(e.getMessage());
++            }
++        }
++        return result;
++    }
++    
+ 
+     /**
+      * @brief decode password method
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/EditUserController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/EditUserController.java
+index 38ffceb..c5be489 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/EditUserController.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/EditUserController.java
+@@ -78,7 +78,8 @@ public class EditUserController  {
+            
+             DB myObj = new DB();
+             
+-            if (newpasswordTextField.getText().equals(renewpasswordTextField.getText())) {
++            if (newpasswordTextField.getText().equals(renewpasswordTextField.getText()) && 
++                   myObj.generateSecurePassword(oldpasswordTextField.getText()) .equals(myObj.getUserPassFromTable(usernameTextField.getText()))) {
+                 myObj.editUserDataDB(usernameTextField.getText(), newpasswordTextField.getText());
+                 dialogue("Updating information in the database for "+usernameTextField.getText(), "Successful!");
+                 
+diff --git a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/editUser.fxml b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/editUser.fxml
+index 8669a56..bf70c3c 100644
+--- a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/editUser.fxml
++++ b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/editUser.fxml
+@@ -1,15 +1,12 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ 
+-<?import java.lang.*?>
+-<?import javafx.scene.control.*?>
+-<?import javafx.scene.layout.*?>
+ <?import javafx.scene.control.Button?>
+ <?import javafx.scene.control.Label?>
+ <?import javafx.scene.control.PasswordField?>
+ <?import javafx.scene.control.TextField?>
+ <?import javafx.scene.layout.AnchorPane?>
+ 
+-<AnchorPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycompany.javafxapplication1.EditUserController">
++<AnchorPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycompany.javafxapplication1.EditUserController">
+    <children>
+       <AnchorPane layoutX="22.0" layoutY="28.0" prefHeight="364.0" prefWidth="556.0">
+          <children>
+@@ -22,6 +19,8 @@
+             <PasswordField fx:id="renewpasswordTextField" layoutX="230.0" layoutY="277.0" prefHeight="25.0" prefWidth="145.0" />
+             <Button fx:id="updateUser" layoutX="131.0" layoutY="313.0" mnemonicParsing="false" onAction="#updateUser" text="Update Details" />
+             <Button fx:id="cancelUpdatebtn" layoutX="353.0" layoutY="313.0" mnemonicParsing="false" onAction="#cancelUserUpdate" text="Cancel" />
++            <Label layoutX="76.0" layoutY="209.0" text="Old Password" />
++            <PasswordField fx:id="oldpasswordTextField" layoutX="228.0" layoutY="205.0" prefHeight="24.0" prefWidth="145.0" />
+          </children>
+       </AnchorPane>
+    </children>
+
+commit ab01772acabca5efbc4e7df33bd5dd160df0ea0c
+Author: ntu-user <ntu-user@6771011e9061>
+Date:   Wed Dec 6 16:52:12 2023 +0000
+
+    Edit user Functionality
+
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+index 46dca83..ce360ac 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+@@ -192,7 +192,41 @@ public class DB {
+         }
+     } 
+         
++         /**
++     * @param pass
++     * @brief edits user data in the database method
++     * @param user name of type String
++     */ 
++       public void editUserDataDB(String user, String pass) throws InvalidKeySpecException, ClassNotFoundException {
++       
++       try{
+         
++          Class.forName("org.sqlite.JDBC");
++            connection = DriverManager.getConnection(fileName);
++            var statement = connection.createStatement();
++            statement.setQueryTimeout(timeout);          
++            //ResultSet rs= statement.executeQuery("select * from " + dataBaseTableName + " where name= "+ "\""+user+ "\"");
++            statement.executeUpdate("update " + dataBaseTableName + " set password = " +"\""+generateSecurePassword(pass)+ "\""+ " where name= "+ "\""+user+ "\"");
++         
++       }
++       
++       catch(SQLException ex){
++       Logger.getLogger(DB.class.getName()).log(Level.SEVERE, null, ex);
++       }
++       finally {
++                try {
++                    if (connection != null) {
++                        connection.close();
++                    }
++                } catch (SQLException e) {
++                    // connection close failed.
++                    System.err.println(e.getMessage());
++                }
++            }
++       
++       }
++       
++
+         
+         
+         
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/EditUserController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/EditUserController.java
+new file mode 100644
+index 0000000..38ffceb
+--- /dev/null
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/EditUserController.java
+@@ -0,0 +1,158 @@
++/*
++ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
++ * Click nbfs://nbhost/SystemFileSystem/Templates/javafx/FXMLController.java to edit this template
++ */
++package com.mycompany.javafxapplication1;
++
++import java.net.URL;
++import java.util.Optional;
++import java.util.ResourceBundle;
++import javafx.collections.ObservableList;
++import javafx.event.ActionEvent;
++import javafx.fxml.FXML;
++import javafx.fxml.FXMLLoader;
++import javafx.fxml.Initializable;
++import javafx.scene.Group;
++import javafx.scene.Parent;
++import javafx.scene.Scene;
++import javafx.scene.control.Alert;
++import javafx.scene.control.Button;
++import javafx.scene.control.ButtonType;
++import javafx.scene.control.PasswordField;
++import javafx.scene.control.TableColumn;
++import javafx.scene.control.TableView;
++import javafx.scene.control.TextField;
++import javafx.scene.control.cell.PropertyValueFactory;
++import javafx.scene.paint.Color;
++import javafx.stage.Stage;
++
++/**
++ * FXML Controller class
++ *
++ * @author gyening
++ */
++
++
++
++public class EditUserController  {
++    
++    @FXML
++    private TextField usernameTextField;
++     @FXML
++     private PasswordField oldpasswordTextField;
++     
++     @FXML
++     private PasswordField newpasswordTextField;
++     @FXML
++     private PasswordField renewpasswordTextField;
++     
++     @FXML
++     private Button updateUser;
++     
++     @FXML
++    private TableView dataTableView;
++     
++     @FXML
++    private Button cancelUpdatebtn;
++
++   @FXML
++    public void initialize(String nameTextField){
++    try {
++            
++        usernameTextField.setText(nameTextField.toString());
++            
++        
++
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++    
++    }
++    
++    
++    @FXML
++    private void updateUser(ActionEvent event) {
++        Stage secondaryStage = new Stage();
++        Stage editUserStage = (Stage) updateUser.getScene().getWindow();
++        try {
++           
++            DB myObj = new DB();
++            
++            if (newpasswordTextField.getText().equals(renewpasswordTextField.getText())) {
++                myObj.editUserDataDB(usernameTextField.getText(), newpasswordTextField.getText());
++                dialogue("Updating information in the database for "+usernameTextField.getText(), "Successful!");
++                
++            FXMLLoader loader = new FXMLLoader();
++                loader.setLocation(getClass().getResource("secondary.fxml"));
++                Parent root = loader.load();
++                Scene scene = new Scene(root, 640, 480);
++                secondaryStage.setScene(scene);
++                secondaryStage.setTitle("Show Users");
++                String msg="some data sent from edit Controller";
++                secondaryStage.setUserData(msg);
++            SecondaryController secondaryController = loader.getController();
++            String[] credentials = {usernameTextField.getText(), newpasswordTextField.getText()};
++            secondaryController.initialise(credentials);    
++             secondaryStage.show();
++            editUserStage.close();
++            
++            } else {
++                dialogue("New password does not match for "+usernameTextField.getText(), "Error!");
++            }
++            
++            
++            
++            
++           
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++    }
++
++ private void dialogue(String headerMsg, String contentMsg) {
++        Stage editUserStage = new Stage();
++        Group root = new Group();
++        Scene scene = new Scene(root, 300, 300, Color.DARKGRAY);
++
++        Alert alert = new Alert(Alert.AlertType.INFORMATION);
++        alert.setTitle("Confirmation Dialog");
++        alert.setHeaderText(headerMsg);
++        alert.setContentText(contentMsg);
++
++        Optional<ButtonType> result = alert.showAndWait();
++    }
++    
++ @FXML
++ 
++ private void cancelUserUpdate(){
++        Stage secondaryStage = new Stage();
++        Stage editUserStage = (Stage) updateUser.getScene().getWindow();
++     try {
++            
++        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Do you want to cancel this operation?", ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
++       alert.showAndWait();
++        
++        if (alert.getResult() == ButtonType.YES){
++        
++        FXMLLoader loader = new FXMLLoader();
++                loader.setLocation(getClass().getResource("secondary.fxml"));
++                Parent root = loader.load();
++                Scene scene = new Scene(root, 640, 480);
++                secondaryStage.setScene(scene);
++                secondaryStage.setTitle("Show Users");
++                String msg="some data sent from edit Controller";
++                secondaryStage.setUserData(msg);
++            SecondaryController secondaryController = loader.getController();
++            String[] credentials = {usernameTextField.getText(), newpasswordTextField.getText()};
++            secondaryController.initialise(credentials);    
++             secondaryStage.show();
++            editUserStage.close();
++        }
++            
++        
++
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++ }
++}
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/SecondaryController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/SecondaryController.java
+index 5fa0d2e..7044d3a 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/SecondaryController.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/SecondaryController.java
+@@ -88,6 +88,41 @@ public class SecondaryController {
+     }
+    
+      
++    }
++    
++    
++    
++     @FXML
++    private void editBtnHandler(ActionEvent event) {
++        Stage editUserStage = new Stage();
++        Stage secondaryStage = (Stage) delUserBtn.getScene().getWindow();
++        try {
++           
++            User edituser=(User) dataTableView.getSelectionModel().getSelectedItem();
++          
++            // System.out.println(edituser.getUser());
++             String name=edituser.getUser();
++            
++            FXMLLoader loader = new FXMLLoader();
++            
++            
++             loader.setLocation(getClass().getResource("editUser.fxml"));
++                Parent root = loader.load();
++                Scene scene = new Scene(root, 640, 480);
++                editUserStage.setScene(scene);
++                editUserStage.setTitle("Edit User details");
++           
++            EditUserController editUserController = loader.getController();
++            editUserController.initialize(name);
++            editUserStage.show();
++            secondaryStage.close();
++
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++        
++       
++        
+     }
+     
+     
+diff --git a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/editUser.fxml b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/editUser.fxml
+new file mode 100644
+index 0000000..8669a56
+--- /dev/null
++++ b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/editUser.fxml
+@@ -0,0 +1,28 @@
++<?xml version="1.0" encoding="UTF-8"?>
++
++<?import java.lang.*?>
++<?import javafx.scene.control.*?>
++<?import javafx.scene.layout.*?>
++<?import javafx.scene.control.Button?>
++<?import javafx.scene.control.Label?>
++<?import javafx.scene.control.PasswordField?>
++<?import javafx.scene.control.TextField?>
++<?import javafx.scene.layout.AnchorPane?>
++
++<AnchorPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycompany.javafxapplication1.EditUserController">
++   <children>
++      <AnchorPane layoutX="22.0" layoutY="28.0" prefHeight="364.0" prefWidth="556.0">
++         <children>
++            <Label layoutX="60.0" layoutY="89.0" prefHeight="42.0" prefWidth="87.0" text="Username" />
++            <TextField fx:id="usernameTextField" editable="false" layoutX="204.0" layoutY="98.0" />
++            <Label layoutX="194.0" layoutY="28.0" prefHeight="49.0" prefWidth="102.0" text="Edit User details" />
++            <Label layoutX="76.0" layoutY="240.0" text="New Password" />
++            <Label layoutX="51.0" layoutY="282.0" text="Retype New password" />
++            <PasswordField fx:id="newpasswordTextField" layoutX="230.0" layoutY="236.0" prefHeight="25.0" prefWidth="145.0" />
++            <PasswordField fx:id="renewpasswordTextField" layoutX="230.0" layoutY="277.0" prefHeight="25.0" prefWidth="145.0" />
++            <Button fx:id="updateUser" layoutX="131.0" layoutY="313.0" mnemonicParsing="false" onAction="#updateUser" text="Update Details" />
++            <Button fx:id="cancelUpdatebtn" layoutX="353.0" layoutY="313.0" mnemonicParsing="false" onAction="#cancelUserUpdate" text="Cancel" />
++         </children>
++      </AnchorPane>
++   </children>
++</AnchorPane>
+diff --git a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/secondary.fxml b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/secondary.fxml
+index c486b82..13aac9d 100644
+--- a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/secondary.fxml
++++ b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/secondary.fxml
+@@ -33,6 +33,7 @@
+       <GridPane>
+         <columnConstraints>
+             <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
++            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+           <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+           <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+         </columnConstraints>
+@@ -40,9 +41,10 @@
+           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+         </rowConstraints>
+          <children>
+-              <Button fx:id="secondaryButton" onAction="#switchToPrimary" text="Return to Login" GridPane.columnIndex="2" />
+-            <Button fx:id="refreshBtn" mnemonicParsing="false" onAction="#RefreshBtnHandler" text="Refresh" GridPane.columnIndex="1" />
+-            <Button fx:id="delUserBtn" mnemonicParsing="false" onAction="#deleteUser" text="Delete User" />
++              <Button fx:id="secondaryButton" onAction="#switchToPrimary" text="Return to Login" GridPane.columnIndex="3" />
++            <Button fx:id="refreshBtn" mnemonicParsing="false" onAction="#RefreshBtnHandler" text="Refresh" GridPane.columnIndex="2" />
++            <Button fx:id="delUserBtn" mnemonicParsing="false" onAction="#deleteUser" text="Delete User" GridPane.columnIndex="1" />
++            <Button fx:id="editUserbtn" mnemonicParsing="false" onAction="#editBtnHandler" text="Edit User" />
+          </children>
+       </GridPane>
+     </children>
+
+commit 9363930d93f43ba68a015057c244dc016b1a1b24
+Author: ntu-user <ntu-user@6771011e9061>
+Date:   Mon Nov 27 20:29:27 2023 +0000
+
+    Delete user Functionality(fix columns getting duplicated)
+
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/SecondaryController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/SecondaryController.java
+index 2db3ec2..5fa0d2e 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/SecondaryController.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/SecondaryController.java
+@@ -65,6 +65,11 @@ public class SecondaryController {
+             DB myObj = new DB();
+             User deluser=(User) dataTableView.getSelectionModel().getSelectedItem();
+             myObj.delDatafromDB(deluser.getUser());
++            //Start of reset the data after deleting
++            dataTableView.getColumns().clear();
++            dataTableView.getItems().clear();
++             //End of reset the data after deleting
++            
+              ObservableList<User> data;
+         
+             data = myObj.getDataFromTable();
+
+commit 0747946f99ffc4bfc44784b8409adae3cdfd355b
+Author: ntu-user <ntu-user@6771011e9061>
+Date:   Sat Nov 25 18:43:50 2023 +0000
+
+    Delete user Functionality
+
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+index f16fe03..46dca83 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+@@ -156,6 +156,46 @@ public class DB {
+         }
+     }
+ 
++        
++          /**
++     * @brief delete user data from the database method
++     * @param user name of type String
++     */
++        
++       public void delDatafromDB(String user) throws InvalidKeySpecException, ClassNotFoundException {
++        try {
++            Class.forName("org.sqlite.JDBC");
++            connection = DriverManager.getConnection(fileName);
++            var statement = connection.createStatement();
++            statement.setQueryTimeout(timeout);          
++            //System.out.println("delete from " + dataBaseTableName + " where name= "+user);
++            statement.executeUpdate("delete from " + dataBaseTableName + " where name= "+ "\""+user+ "\"");
++        } catch (SQLException ex) {
++            Logger.getLogger(DB.class.getName()).log(Level.SEVERE, null, ex);
++        } finally {
++            try {
++                if (connection != null) {
++                    connection.close();
++                }
++            } catch (SQLException ex) {
++                Logger.getLogger(DB.class.getName()).log(Level.SEVERE, null, ex);
++            } finally {
++                try {
++                    if (connection != null) {
++                        connection.close();
++                    }
++                } catch (SQLException e) {
++                    // connection close failed.
++                    System.err.println(e.getMessage());
++                }
++            }
++        }
++    } 
++        
++        
++        
++        
++        
+     /**
+      * @brief get data from the Database method
+      * @retunr results as ResultSet
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/SecondaryController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/SecondaryController.java
+index e2cddcc..2db3ec2 100644
+--- a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/SecondaryController.java
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/SecondaryController.java
+@@ -13,7 +13,9 @@ import javafx.fxml.FXML;
+ import javafx.fxml.FXMLLoader;
+ import javafx.scene.Parent;
+ import javafx.scene.Scene;
++import javafx.scene.control.Alert;
+ import javafx.scene.control.Button;
++import javafx.scene.control.ButtonType;
+ import javafx.scene.control.TableColumn;
+ import javafx.scene.control.TableView;
+ import javafx.scene.control.TextField;
+@@ -39,11 +41,51 @@ public class SecondaryController {
+     @FXML
+     private TextField customTextField;
+     
++    @FXML
++    private Button delUserBtn;
++    
+     @FXML
+     private void RefreshBtnHandler(ActionEvent event){
+         Stage primaryStage = (Stage) customTextField.getScene().getWindow();
+         customTextField.setText((String)primaryStage.getUserData());
+     }
++    
++    
++    
++    @FXML
++    private void deleteUser(ActionEvent event){
++    
++       Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Do you want to delete user?", ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
++       alert.showAndWait();
++        
++        if (alert.getResult() == ButtonType.YES) {
++    
++    try {
++            
++            DB myObj = new DB();
++            User deluser=(User) dataTableView.getSelectionModel().getSelectedItem();
++            myObj.delDatafromDB(deluser.getUser());
++             ObservableList<User> data;
++        
++            data = myObj.getDataFromTable();
++            TableColumn user = new TableColumn("User");
++        user.setCellValueFactory( new PropertyValueFactory<>("user"));
++
++        TableColumn pass = new TableColumn("Pass");
++        pass.setCellValueFactory( new PropertyValueFactory<>("pass"));
++        dataTableView.setItems(data);
++        dataTableView.getColumns().addAll(user, pass);
++        
++
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++    }
++   
++     
++    }
++    
++    
+         
+     @FXML
+     private void switchToPrimary(){
+diff --git a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/secondary.fxml b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/secondary.fxml
+index fc8ffcc..c486b82 100644
+--- a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/secondary.fxml
++++ b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/secondary.fxml
+@@ -1,15 +1,16 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ 
+-<?import java.lang.*?>
+-<?import javafx.geometry.*?>
+-<?import javafx.scene.control.*?>
+-<?import javafx.scene.layout.*?>
+-<?import javafx.scene.layout.VBox?>
+-<?import javafx.scene.control.Label?>
+-<?import javafx.scene.control.Button?>
+ <?import javafx.geometry.Insets?>
++<?import javafx.scene.control.Button?>
++<?import javafx.scene.control.Label?>
++<?import javafx.scene.control.TableView?>
++<?import javafx.scene.control.TextField?>
++<?import javafx.scene.layout.ColumnConstraints?>
++<?import javafx.scene.layout.GridPane?>
++<?import javafx.scene.layout.RowConstraints?>
++<?import javafx.scene.layout.VBox?>
+ 
+-<VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycompany.javafxapplication1.SecondaryController">
++<VBox alignment="CENTER" prefHeight="407.0" prefWidth="390.0" spacing="20.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycompany.javafxapplication1.SecondaryController">
+     <children>
+         <Label text="Users List" />
+       <GridPane>
+@@ -31,6 +32,7 @@
+       <TableView fx:id="dataTableView" prefHeight="200.0" prefWidth="200.0" />
+       <GridPane>
+         <columnConstraints>
++            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+           <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+           <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+         </columnConstraints>
+@@ -38,8 +40,9 @@
+           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+         </rowConstraints>
+          <children>
+-              <Button fx:id="secondaryButton" onAction="#switchToPrimary" text="Return to Login" GridPane.columnIndex="1" />
+-            <Button fx:id="refreshBtn" mnemonicParsing="false" onAction="#RefreshBtnHandler" text="Refresh" />
++              <Button fx:id="secondaryButton" onAction="#switchToPrimary" text="Return to Login" GridPane.columnIndex="2" />
++            <Button fx:id="refreshBtn" mnemonicParsing="false" onAction="#RefreshBtnHandler" text="Refresh" GridPane.columnIndex="1" />
++            <Button fx:id="delUserBtn" mnemonicParsing="false" onAction="#deleteUser" text="Delete User" />
+          </children>
+       </GridPane>
+     </children>
+
+commit c1eba0a9fbd2f3dbff09bae0b85e1c5f985a2b1a
+Author: N1169580 <emmanuel.gyening2023@my.ntu.ac.uk>
+Date:   Sat Nov 25 11:47:45 2023 +0000
+
+    Add files via upload
+
+diff --git a/JavaFXApplication1/nbactions.xml b/JavaFXApplication1/nbactions.xml
+new file mode 100644
+index 0000000..a0cb38e
+--- /dev/null
++++ b/JavaFXApplication1/nbactions.xml
+@@ -0,0 +1,40 @@
++<?xml version="1.0" encoding="UTF-8"?>
++    <actions>
++        <action>
++            <actionName>run</actionName>
++            <packagings>
++                <packaging>jar</packaging>
++            </packagings>
++            <goals>
++                <goal>clean</goal>
++                <goal>javafx:run</goal>
++            </goals>
++        </action>
++        <action>
++            <actionName>debug</actionName>
++            <goals>
++                <goal>clean</goal>
++                <goal>javafx:run@ide-debug</goal>
++            </goals>
++            <properties>
++                <jpda.listen>true</jpda.listen>
++            </properties>
++        </action>
++        <action>
++            <actionName>profile</actionName>
++            <goals>
++                <goal>clean</goal>
++                <goal>javafx:run@ide-profile</goal>
++            </goals>
++        </action>
++        <action>
++            <actionName>CUSTOM-jlink</actionName>
++            <displayName>jlink</displayName>
++            <goals>
++                <goal>clean</goal>
++                <!-- compile not needed with javafx-maven-plugin v0.0.5 -->
++                <goal>compile</goal>
++                <goal>javafx:jlink</goal>
++            </goals>
++        </action>
++    </actions>
+diff --git a/JavaFXApplication1/pom.xml b/JavaFXApplication1/pom.xml
+new file mode 100644
+index 0000000..2537a1f
+--- /dev/null
++++ b/JavaFXApplication1/pom.xml
+@@ -0,0 +1,126 @@
++<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
++         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
++    <modelVersion>4.0.0</modelVersion>
++    <groupId>com.mycompany</groupId>
++    <artifactId>JavaFXApplication1</artifactId>
++    <version>1.0-SNAPSHOT</version>
++    <properties>
++        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
++        <maven.compiler.source>11</maven.compiler.source>
++        <maven.compiler.target>11</maven.compiler.target>
++    </properties>
++    <dependencies>
++        <dependency>
++            <groupId>org.openjfx</groupId>
++            <artifactId>javafx-controls</artifactId>
++            <version>13</version>
++        </dependency>
++        <dependency>
++            <groupId>org.openjfx</groupId>
++            <artifactId>javafx-fxml</artifactId>
++            <version>13</version>
++        </dependency>
++        <dependency>
++            <groupId>org.xerial</groupId>
++            <artifactId>sqlite-jdbc</artifactId>
++            <version>3.40.0.0</version>
++        </dependency>
++        <dependency>
++            <groupId>org.apache.maven.plugins</groupId>
++            <artifactId>maven-javadoc-plugin</artifactId>
++            <version>3.4.1</version>
++        </dependency>
++        <dependency>
++            <groupId>org.apache.maven.plugins</groupId>
++            <artifactId>maven-jar-plugin</artifactId>
++            <version>3.3.0</version>
++        </dependency>
++        <dependency>
++            <groupId>org.xerial</groupId>
++            <artifactId>sqlite-jdbc</artifactId>
++            <version>3.40.0.0</version>
++        </dependency>
++    </dependencies>
++    <build>
++        <plugins>
++            <plugin>
++                <groupId>org.apache.maven.plugins</groupId>
++                <artifactId>maven-shade-plugin</artifactId>
++                <version>3.4.1</version>
++                <executions>
++                    <execution>
++                        <phase>package</phase>
++                        <goals>
++                            <goal>shade</goal>
++                        </goals>
++                        <configuration>
++                            <transformers>
++                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
++                                    <manifestEntries>
++                                        <Main-Class>com.mycompany.javafxapplication1.App</Main-Class>
++                                        <Build-Number>123</Build-Number>
++                                    </manifestEntries>
++                                </transformer>
++                            </transformers>
++                        </configuration>
++                    </execution>
++                </executions>
++            </plugin>
++            <plugin>
++                <groupId>org.apache.maven.plugins</groupId>
++                <artifactId>maven-compiler-plugin</artifactId>
++                <version>3.8.0</version>
++                <configuration>
++                    <release>11</release>
++                </configuration>
++            </plugin>
++            <plugin>
++                <groupId>org.openjfx</groupId>
++                <artifactId>javafx-maven-plugin</artifactId>
++                <version>0.0.4</version>
++                <configuration>
++                    <mainClass>com.mycompany.javafxapplication1.App</mainClass>
++                </configuration>
++                <executions>
++                    <execution>
++                        <!-- Default configuration for running -->
++                        <!-- Usage: mvn clean javafx:run -->
++                        <id>default-cli</id>
++                    </execution>
++                    <execution>
++                        <!-- Configuration for manual attach debugging -->
++                        <!-- Usage: mvn clean javafx:run@debug -->
++                        <id>debug</id>
++                        <configuration>
++                            <options>
++                                <option>-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=localhost:8000</option>
++                            </options>
++                        </configuration>
++                    </execution>
++                    <execution>
++                        <!-- Configuration for automatic IDE debugging -->
++                        <id>ide-debug</id>
++                        <configuration>
++                            <options>
++                                <option>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</option>
++                            </options>
++                        </configuration>
++                    </execution>
++                    <execution>
++                        <!-- Configuration for automatic IDE profiling -->
++                        <id>ide-profile</id>
++                        <configuration>
++                            <options>
++                                <option>${profiler.jvmargs.arg1}</option>
++                                <option>${profiler.jvmargs.arg2}</option>
++                                <option>${profiler.jvmargs.arg3}</option>
++                                <option>${profiler.jvmargs.arg4}</option>
++                                <option>${profiler.jvmargs.arg5}</option>
++                            </options>
++                        </configuration>
++                    </execution>
++                </executions>
++            </plugin>
++        </plugins>
++    </build>
++</project>
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/App.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/App.java
+new file mode 100644
+index 0000000..d38a57d
+--- /dev/null
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/App.java
+@@ -0,0 +1,53 @@
++package com.mycompany.javafxapplication1;
++
++import javafx.application.Application;
++import javafx.fxml.FXMLLoader;
++import javafx.scene.Parent;
++import javafx.scene.Scene;
++import javafx.stage.Stage;
++
++import java.io.IOException;
++import java.util.logging.Level;
++import java.util.logging.Logger;
++
++/**
++ * JavaFX App
++ */
++public class App extends Application {
++
++    @Override
++    public void start(Stage stage) throws IOException {
++        Stage secondaryStage = new Stage();
++        DB myObj = new DB();
++        myObj.log("-------- Simple Tutorial on how to make JDBC connection to SQLite DB ------------");
++        myObj.log("\n---------- Drop table ----------");
++        try {
++            myObj.delTable(myObj.getTableName());
++        } catch (ClassNotFoundException ex) {
++            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
++        }
++        myObj.log("\n---------- Create table ----------");
++        try {
++            myObj.createTable(myObj.getTableName());
++        } catch (ClassNotFoundException ex) {
++            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
++        }
++        try {
++            FXMLLoader loader = new FXMLLoader();
++            loader.setLocation(getClass().getResource("primary.fxml"));
++            Parent root = loader.load();
++            Scene scene = new Scene(root, 640, 480);
++            secondaryStage.setScene(scene);
++            secondaryStage.setTitle("Primary View");
++            secondaryStage.show();
++
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++    }
++
++    public static void main(String[] args) {
++        launch();
++    }
++
++}
+\ No newline at end of file
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+new file mode 100644
+index 0000000..f16fe03
+--- /dev/null
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/DB.java
+@@ -0,0 +1,308 @@
++/*
++ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
++ * Click nbfs://nbhost/SystemFileSystem/Templates/Project/Maven2/JavaApp/src/main/java/${packagePath}/${mainClassName}.java to edit this template
++ */
++package com.mycompany.javafxapplication1;
++
++import java.io.File;
++import java.io.FileWriter;
++import java.io.IOException;
++import java.sql.Connection;
++import java.sql.DriverManager;
++import java.sql.ResultSet;
++import java.sql.SQLException;
++import java.sql.Statement;
++
++import java.util.Base64;
++import java.nio.charset.StandardCharsets;
++import java.security.NoSuchAlgorithmException;
++import java.security.SecureRandom;
++import java.security.spec.InvalidKeySpecException;
++import java.util.ArrayList;
++import java.util.Arrays;
++import java.util.List;
++import java.util.Random;
++import java.util.Scanner;
++import java.util.logging.Level;
++import java.util.logging.Logger;
++import javafx.collections.FXCollections;
++import javafx.collections.ObservableList;
++import javax.crypto.SecretKeyFactory;
++import javax.crypto.spec.PBEKeySpec;
++
++/**
++ *
++ * @author ntu-user
++ */
++public class DB {
++    private String fileName = "jdbc:sqlite:comp20081.db";
++    private int timeout = 30;
++    private String dataBaseName = "COMP20081";
++    private String dataBaseTableName = "Users";
++    Connection connection = null;
++    private Random random = new SecureRandom();
++    private String characters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
++    private int iterations = 10000;
++    private int keylength = 256;
++    private String saltValue;
++    
++    /**
++     * @brief constructor - generates the salt if it doesn't exists or load it from the file .salt
++     */
++    DB() {
++        try {
++            File fp = new File(".salt");
++            if (!fp.exists()) {
++                saltValue = this.getSaltvalue(30);
++                FileWriter myWriter = new FileWriter(fp);
++                myWriter.write(saltValue);
++                myWriter.close();
++            } else {
++                Scanner myReader = new Scanner(fp);
++                while (myReader.hasNextLine()) {
++                    saltValue = myReader.nextLine();
++                }
++            }
++        } catch (IOException e) {
++            e.printStackTrace();
++        }
++    }
++        
++    /**
++     * @brief create a new table
++     * @param tableName name of type String
++     */
++    public void createTable(String tableName) throws ClassNotFoundException {
++        try {
++            // create a database connection
++            Class.forName("org.sqlite.JDBC");
++            connection = DriverManager.getConnection(fileName);
++            var statement = connection.createStatement();
++            statement.setQueryTimeout(timeout);
++            statement.executeUpdate("create table if not exists " + tableName + "(id integer primary key autoincrement, name string, password string)");
++
++        } catch (SQLException ex) {
++            Logger.getLogger(DB.class.getName()).log(Level.SEVERE, null, ex);
++        } finally {
++            try {
++                if (connection != null) {
++                    connection.close();
++                }
++            } catch (SQLException e) {
++                // connection close failed.
++                System.err.println(e.getMessage());
++            }
++        }
++    }
++
++    /**
++     * @brief delete table
++     * @param tableName of type String
++     */
++    public void delTable(String tableName) throws ClassNotFoundException {
++        try {
++            // create a database connection
++            Class.forName("org.sqlite.JDBC");
++            connection = DriverManager.getConnection(fileName);
++            var statement = connection.createStatement();
++            statement.setQueryTimeout(timeout);
++            statement.executeUpdate("drop table if exists " + tableName);
++        } catch (SQLException ex) {
++            Logger.getLogger(DB.class.getName()).log(Level.SEVERE, null, ex);
++        } finally {
++            try {
++                if (connection != null) {
++                    connection.close();
++                }
++            } catch (SQLException e) {
++                // connection close failed.
++                System.err.println(e.getMessage());
++            }
++        }
++    }
++
++    /**
++     * @brief add data to the database method
++     * @param user name of type String
++     * @param password of type String
++     */
++        public void addDataToDB(String user, String password) throws InvalidKeySpecException, ClassNotFoundException {
++        try {
++            Class.forName("org.sqlite.JDBC");
++            connection = DriverManager.getConnection(fileName);
++            var statement = connection.createStatement();
++            statement.setQueryTimeout(timeout);
++//            System.out.println("Adding User: " + user + ", Password: " + password);
++            statement.executeUpdate("insert into " + dataBaseTableName + " (name, password) values('" + user + "','" + generateSecurePassword(password) + "')");
++        } catch (SQLException ex) {
++            Logger.getLogger(DB.class.getName()).log(Level.SEVERE, null, ex);
++        } finally {
++            try {
++                if (connection != null) {
++                    connection.close();
++                }
++            } catch (SQLException ex) {
++                Logger.getLogger(DB.class.getName()).log(Level.SEVERE, null, ex);
++            } finally {
++                try {
++                    if (connection != null) {
++                        connection.close();
++                    }
++                } catch (SQLException e) {
++                    // connection close failed.
++                    System.err.println(e.getMessage());
++                }
++            }
++        }
++    }
++
++    /**
++     * @brief get data from the Database method
++     * @retunr results as ResultSet
++     */
++    public ObservableList<User> getDataFromTable() throws ClassNotFoundException {
++        ObservableList<User> result = FXCollections.observableArrayList();
++        try {
++            Class.forName("org.sqlite.JDBC");
++            connection = DriverManager.getConnection(fileName);
++            var statement = connection.createStatement();
++            statement.setQueryTimeout(timeout);
++            ResultSet rs = statement.executeQuery("select * from " + this.dataBaseTableName);
++            while (rs.next()) {
++                // read the result set
++                result.add(new User(rs.getString("name"),rs.getString("password")));
++            }
++            
++        } catch (SQLException ex) {
++            Logger.getLogger(DB.class.getName()).log(Level.SEVERE, null, ex);
++        } finally {
++            try {
++                if (connection != null) {
++                    connection.close();
++                }
++            } catch (SQLException e) {
++                // connection close failed.
++                System.err.println(e.getMessage());
++            }
++        }
++        return result;
++    }
++
++    /**
++     * @brief decode password method
++     * @param user name as type String
++     * @param pass plain password of type String
++     * @return true if the credentials are valid, otherwise false
++     */
++    public boolean validateUser(String user, String pass) throws InvalidKeySpecException, ClassNotFoundException {
++        Boolean flag = false;
++        try {
++            Class.forName("org.sqlite.JDBC");
++            connection = DriverManager.getConnection(fileName);
++            var statement = connection.createStatement();
++            statement.setQueryTimeout(timeout);
++            ResultSet rs = statement.executeQuery("select name, password from " + this.dataBaseTableName);
++            String inPass = generateSecurePassword(pass);
++            // Let's iterate through the java ResultSet
++            while (rs.next()) {
++                if (user.equals(rs.getString("name")) && rs.getString("password").equals(inPass)) {
++                    flag = true;
++                    break;
++                }
++            }
++        } catch (SQLException ex) {
++            Logger.getLogger(DB.class.getName()).log(Level.SEVERE, null, ex);
++        } finally {
++            try {
++                if (connection != null) {
++                    connection.close();
++                }
++            } catch (SQLException e) {
++                // connection close failed.
++                System.err.println(e.getMessage());
++            }
++        }
++
++        return flag;
++    }
++
++    private String getSaltvalue(int length) {
++        StringBuilder finalval = new StringBuilder(length);
++
++        for (int i = 0; i < length; i++) {
++            finalval.append(characters.charAt(random.nextInt(characters.length())));
++        }
++
++        return new String(finalval);
++    }
++
++    /* Method to generate the hash value */
++    private byte[] hash(char[] password, byte[] salt) throws InvalidKeySpecException {
++        PBEKeySpec spec = new PBEKeySpec(password, salt, iterations, keylength);
++        Arrays.fill(password, Character.MIN_VALUE);
++        try {
++            SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
++            return skf.generateSecret(spec).getEncoded();
++        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
++            throw new AssertionError("Error while hashing a password: " + e.getMessage(), e);
++        } finally {
++            spec.clearPassword();
++        }
++    }
++
++    public String generateSecurePassword(String password) throws InvalidKeySpecException {
++        String finalval = null;
++
++        byte[] securePassword = hash(password.toCharArray(), saltValue.getBytes());
++
++        finalval = Base64.getEncoder().encodeToString(securePassword);
++
++        return finalval;
++    }
++
++    /**
++     * @brief get table name
++     * @return table name as String
++     */
++    public String getTableName() {
++        return this.dataBaseTableName;
++    }
++
++    /**
++     * @brief print a message on screen method
++     * @param message of type String
++     */
++    public void log(String message) {
++        System.out.println(message);
++
++    }
++
++//    public static void main(String[] args) throws InvalidKeySpecException {
++//        DB myObj = new DB();
++//        myObj.log("-------- Simple Tutorial on how to make JDBC connection to SQLite DB ------------");
++//        myObj.log("\n---------- Drop table ----------");
++//        myObj.delTable(myObj.getTableName());
++//        myObj.log("\n---------- Create table ----------");
++//        myObj.createTable(myObj.getTableName());
++//        myObj.log("\n---------- Adding Users ----------");
++//        myObj.addDataToDB("ntu-user", "12z34");
++//        myObj.addDataToDB("ntu-user2", "12yx4");
++//        myObj.addDataToDB("ntu-user3", "a1234");
++//        myObj.log("\n---------- get Data from the Table ----------");
++//        myObj.getDataFromTable(myObj.getTableName());
++//        myObj.log("\n---------- Validate users ----------");
++//        String[] users = new String[]{"ntu-user", "ntu-user", "ntu-user1"};
++//        String[] passwords = new String[]{"12z34", "1235", "1234"};
++//        String[] messages = new String[]{"VALID user and password",
++//            "VALID user and INVALID password", "INVALID user and VALID password"};
++//
++//        for (int i = 0; i < 3; i++) {
++//            System.out.println("Testing " + messages[i]);
++//            if (myObj.validateUser(users[i], passwords[i], myObj.getTableName())) {
++//                myObj.log("++++++++++VALID credentials!++++++++++++");
++//            } else {
++//                myObj.log("----------INVALID credentials!----------");
++//            }
++//        }
++//    }
++}
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/PrimaryController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/PrimaryController.java
+new file mode 100644
+index 0000000..e85a954
+--- /dev/null
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/PrimaryController.java
+@@ -0,0 +1,92 @@
++package com.mycompany.javafxapplication1;
++
++import java.io.IOException;
++import java.util.Optional;
++import javafx.fxml.FXML;
++import javafx.scene.control.Button;
++import javafx.event.ActionEvent;
++import javafx.fxml.FXMLLoader;
++import javafx.scene.Group;
++import javafx.scene.Parent;
++import javafx.scene.Scene;
++import javafx.scene.control.Alert;
++import javafx.scene.control.Alert.AlertType;
++import javafx.scene.control.ButtonType;
++import javafx.stage.Stage;
++import javafx.scene.control.PasswordField;
++import javafx.scene.control.TextField;
++import javafx.scene.paint.Color;
++
++public class PrimaryController {
++
++    @FXML
++    private Button registerBtn;
++
++    @FXML
++    private TextField userTextField;
++
++    @FXML
++    private PasswordField passPasswordField;
++
++    @FXML
++    private void registerBtnHandler(ActionEvent event) {
++        Stage secondaryStage = new Stage();
++        Stage primaryStage = (Stage) registerBtn.getScene().getWindow();
++        DB myObj = new DB();
++        try {
++            FXMLLoader loader = new FXMLLoader();
++            loader.setLocation(getClass().getResource("register.fxml"));
++            Parent root = loader.load();
++            Scene scene = new Scene(root, 640, 480);
++            secondaryStage.setScene(scene);
++            secondaryStage.setTitle("Register a new User");
++            secondaryStage.show();
++            primaryStage.close();
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++    }
++    
++    private void dialogue(String headerMsg, String contentMsg) {
++        Stage secondaryStage = new Stage();
++        Group root = new Group();
++        Scene scene = new Scene(root, 300, 300, Color.DARKGRAY);
++
++        Alert alert = new Alert(Alert.AlertType.ERROR);
++        alert.setTitle("Confirmation Dialog");
++        alert.setHeaderText(headerMsg);
++        alert.setContentText(contentMsg);
++
++        Optional<ButtonType> result = alert.showAndWait();
++    }
++
++    @FXML
++    private void switchToSecondary() {
++        Stage secondaryStage = new Stage();
++        Stage primaryStage = (Stage) registerBtn.getScene().getWindow();
++        try {
++            DB myObj = new DB();
++            String[] credentials = {userTextField.getText(), passPasswordField.getText()};
++            if(myObj.validateUser(userTextField.getText(), passPasswordField.getText())){
++                FXMLLoader loader = new FXMLLoader();
++                loader.setLocation(getClass().getResource("secondary.fxml"));
++                Parent root = loader.load();
++                Scene scene = new Scene(root, 640, 480);
++                secondaryStage.setScene(scene);
++                SecondaryController controller = loader.getController();
++                controller.initialise(credentials);
++                secondaryStage.setTitle("Show Users");
++                String msg="some data sent from Primary Controller";
++                secondaryStage.setUserData(msg);
++                secondaryStage.show();
++                primaryStage.close();
++            }
++            else{
++                dialogue("Invalid User Name / Password","Please try again!");
++            }
++
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++    }
++}
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/RegisterController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/RegisterController.java
+new file mode 100644
+index 0000000..05e4159
+--- /dev/null
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/RegisterController.java
+@@ -0,0 +1,137 @@
++/*
++ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
++ * Click nbfs://nbhost/SystemFileSystem/Templates/javafx/FXMLController.java to edit this template
++ */
++package com.mycompany.javafxapplication1;
++
++import java.io.File;
++import java.io.IOException;
++import java.util.Optional;
++import javafx.event.ActionEvent;
++import javafx.fxml.FXML;
++import javafx.fxml.FXMLLoader;
++import javafx.scene.Group;
++import javafx.scene.Parent;
++import javafx.scene.Scene;
++import javafx.scene.control.Alert;
++import javafx.scene.control.Button;
++import javafx.scene.control.ButtonType;
++import javafx.scene.control.PasswordField;
++import javafx.scene.control.TextField;
++import javafx.scene.layout.VBox;
++import javafx.scene.paint.Color;
++import javafx.scene.text.Text;
++import javafx.stage.FileChooser;
++import javafx.stage.Stage;
++
++/**
++ * FXML Controller class
++ *
++ * @author ntu-user
++ */
++public class RegisterController {
++
++    /**
++     * Initializes the controller class.
++     */
++    @FXML
++    private Button registerBtn;
++
++    @FXML
++    private Button backLoginBtn;
++
++    @FXML
++    private PasswordField passPasswordField;
++
++    @FXML
++    private PasswordField rePassPasswordField;
++
++    @FXML
++    private TextField userTextField;
++    
++    @FXML
++    private Text fileText;
++    
++    @FXML
++    private Button selectBtn;
++    
++    @FXML
++    private void selectBtnHandler(ActionEvent event) throws IOException {
++        Stage primaryStage = (Stage) selectBtn.getScene().getWindow();
++        primaryStage.setTitle("Select a File");
++
++        FileChooser fileChooser = new FileChooser();
++        fileChooser.setTitle("Open Resource File");
++        File selectedFile = fileChooser.showOpenDialog(primaryStage);
++        
++        if(selectedFile!=null){
++            fileText.setText((String)selectedFile.getCanonicalPath());
++        }
++        
++    }
++
++    private void dialogue(String headerMsg, String contentMsg) {
++        Stage secondaryStage = new Stage();
++        Group root = new Group();
++        Scene scene = new Scene(root, 300, 300, Color.DARKGRAY);
++        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
++        alert.setTitle("Confirmation Dialog");
++        alert.setHeaderText(headerMsg);
++        alert.setContentText(contentMsg);
++        Optional<ButtonType> result = alert.showAndWait();
++    }
++
++    @FXML
++    private void registerBtnHandler(ActionEvent event) {
++        Stage secondaryStage = new Stage();
++        Stage primaryStage = (Stage) registerBtn.getScene().getWindow();
++        try {
++            FXMLLoader loader = new FXMLLoader();
++            DB myObj = new DB();
++            if (passPasswordField.getText().equals(rePassPasswordField.getText())) {
++                myObj.addDataToDB(userTextField.getText(), passPasswordField.getText());
++                dialogue("Adding information to the database", "Successful!");
++                String[] credentials = {userTextField.getText(), passPasswordField.getText()};
++                loader.setLocation(getClass().getResource("secondary.fxml"));
++                Parent root = loader.load();
++                Scene scene = new Scene(root, 640, 480);
++                secondaryStage.setScene(scene);
++                SecondaryController controller = loader.getController();
++                secondaryStage.setTitle("Show users");
++                controller.initialise(credentials);
++                String msg = "some data sent from Register Controller";
++                secondaryStage.setUserData(msg);
++            } else {
++                loader.setLocation(getClass().getResource("register.fxml"));
++                Parent root = loader.load();
++                Scene scene = new Scene(root, 640, 480);
++                secondaryStage.setScene(scene);
++                secondaryStage.setTitle("Register a new User");
++            }
++            secondaryStage.show();
++            primaryStage.close();
++
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++    }
++
++    @FXML
++    private void backLoginBtnHandler(ActionEvent event) {
++        Stage secondaryStage = new Stage();
++        Stage primaryStage = (Stage) backLoginBtn.getScene().getWindow();
++        try {
++            FXMLLoader loader = new FXMLLoader();
++            loader.setLocation(getClass().getResource("primary.fxml"));
++            Parent root = loader.load();
++            Scene scene = new Scene(root, 640, 480);
++            secondaryStage.setScene(scene);
++            secondaryStage.setTitle("Login");
++            secondaryStage.show();
++            primaryStage.close();
++
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++    }
++}
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/SecondaryController.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/SecondaryController.java
+new file mode 100644
+index 0000000..e2cddcc
+--- /dev/null
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/SecondaryController.java
+@@ -0,0 +1,88 @@
++package com.mycompany.javafxapplication1;
++
++import java.sql.ResultSet;
++import java.sql.SQLException;
++import java.util.List;
++import java.util.logging.Level;
++import java.util.logging.Logger;
++import javafx.beans.property.SimpleStringProperty;
++import javafx.collections.FXCollections;
++import javafx.collections.ObservableList;
++import javafx.event.ActionEvent;
++import javafx.fxml.FXML;
++import javafx.fxml.FXMLLoader;
++import javafx.scene.Parent;
++import javafx.scene.Scene;
++import javafx.scene.control.Button;
++import javafx.scene.control.TableColumn;
++import javafx.scene.control.TableView;
++import javafx.scene.control.TextField;
++import javafx.scene.control.cell.PropertyValueFactory;
++import javafx.stage.Stage;
++
++
++
++public class SecondaryController {
++    
++    @FXML
++    private TextField userTextField;
++    
++    @FXML
++    private TableView dataTableView;
++
++    @FXML
++    private Button secondaryButton;
++    
++    @FXML
++    private Button refreshBtn;
++    
++    @FXML
++    private TextField customTextField;
++    
++    @FXML
++    private void RefreshBtnHandler(ActionEvent event){
++        Stage primaryStage = (Stage) customTextField.getScene().getWindow();
++        customTextField.setText((String)primaryStage.getUserData());
++    }
++        
++    @FXML
++    private void switchToPrimary(){
++        Stage secondaryStage = new Stage();
++        Stage primaryStage = (Stage) secondaryButton.getScene().getWindow();
++        try {
++            
++        
++            FXMLLoader loader = new FXMLLoader();
++            loader.setLocation(getClass().getResource("primary.fxml"));
++            Parent root = loader.load();
++            Scene scene = new Scene(root, 640, 480);
++            secondaryStage.setScene(scene);
++            secondaryStage.setTitle("Login");
++            secondaryStage.show();
++            primaryStage.close();
++
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++    }
++
++    public void initialise(String[] credentials) {
++        userTextField.setText(credentials[0]);
++        DB myObj = new DB();
++        ObservableList<User> data;
++        try {
++            data = myObj.getDataFromTable();
++            TableColumn user = new TableColumn("User");
++        user.setCellValueFactory(
++        new PropertyValueFactory<>("user"));
++
++        TableColumn pass = new TableColumn("Pass");
++        pass.setCellValueFactory(
++            new PropertyValueFactory<>("pass"));
++        dataTableView.setItems(data);
++        dataTableView.getColumns().addAll(user, pass);
++        } catch (ClassNotFoundException ex) {
++            Logger.getLogger(SecondaryController.class.getName()).log(Level.SEVERE, null, ex);
++        }
++    }
++}
+diff --git a/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/User.java b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/User.java
+new file mode 100644
+index 0000000..8d2acc1
+--- /dev/null
++++ b/JavaFXApplication1/src/main/java/com/mycompany/javafxapplication1/User.java
+@@ -0,0 +1,37 @@
++/*
++ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
++ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
++ */
++package com.mycompany.javafxapplication1;
++
++import javafx.beans.property.SimpleStringProperty;
++
++/**
++ *
++ * @author ntu-user
++ */
++public class User {
++    private SimpleStringProperty user;
++    private SimpleStringProperty pass;
++
++    User(String user, String pass) {
++        this.user = new SimpleStringProperty(user);
++        this.pass = new SimpleStringProperty(pass);
++    }
++
++    public String getUser() {
++        return user.get();
++    }
++
++    public void setUser(String user) {
++        this.user.set(user);
++    }
++
++    public String getPass() {
++        return pass.get();
++    }
++
++    public void setPass(String pass) {
++        this.pass.set(pass);
++    }
++}
+diff --git a/JavaFXApplication1/src/main/java/module-info.java b/JavaFXApplication1/src/main/java/module-info.java
+new file mode 100644
+index 0000000..bec8c9d
+--- /dev/null
++++ b/JavaFXApplication1/src/main/java/module-info.java
+@@ -0,0 +1,10 @@
++module com.mycompany.javafxapplication1 {
++    requires javafx.controls;
++    requires javafx.fxml;
++    requires javafx.graphics;
++    requires java.base;
++    requires java.sql; // added
++
++    opens com.mycompany.javafxapplication1 to javafx.fxml;
++    exports com.mycompany.javafxapplication1;
++}
+diff --git a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/primary.fxml b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/primary.fxml
+new file mode 100644
+index 0000000..4110ffd
+--- /dev/null
++++ b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/primary.fxml
+@@ -0,0 +1,38 @@
++<?xml version="1.0" encoding="UTF-8"?>
++
++<?import java.lang.*?>
++<?import javafx.geometry.*?>
++<?import javafx.scene.control.*?>
++<?import javafx.scene.layout.*?>
++<?import javafx.scene.layout.VBox?>
++<?import javafx.scene.control.Label?>
++<?import javafx.scene.control.Button?>
++<?import javafx.geometry.Insets?>
++
++<VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycompany.javafxapplication1.PrimaryController">
++   <children>
++      <Label text="User Login" />
++      <GridPane alignment="CENTER">
++        <columnConstraints>
++          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
++          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
++        </columnConstraints>
++        <rowConstraints>
++          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
++          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
++            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
++        </rowConstraints>
++         <children>
++            <Label text="User" />
++            <TextField fx:id="userTextField" GridPane.columnIndex="1" />
++            <Label text="Password" GridPane.rowIndex="1" />
++            <PasswordField fx:id="passPasswordField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
++            <Button fx:id="registerBtn" mnemonicParsing="false" onAction="#registerBtnHandler" text="Register" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="2" GridPane.valignment="CENTER" />
++            <Button fx:id="primaryButton" onAction="#switchToSecondary" text="Login" GridPane.halignment="CENTER" GridPane.rowIndex="2" GridPane.valignment="CENTER" />
++         </children>
++      </GridPane>
++   </children>
++   <padding>
++      <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
++   </padding>
++</VBox>
+diff --git a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/register.fxml b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/register.fxml
+new file mode 100644
+index 0000000..cf5674f
+--- /dev/null
++++ b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/register.fxml
+@@ -0,0 +1,40 @@
++<?xml version="1.0" encoding="UTF-8"?>
++
++<?import javafx.scene.text.*?>
++<?import java.lang.*?>
++<?import java.util.*?>
++<?import javafx.scene.*?>
++<?import javafx.scene.control.*?>
++<?import javafx.scene.layout.*?>
++
++<AnchorPane id="AnchorPane" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycompany.javafxapplication1.RegisterController">
++   <children>
++      <GridPane alignment="CENTER" layoutY="124.0" prefHeight="126.0" prefWidth="600.0">
++        <columnConstraints>
++          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
++          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
++        </columnConstraints>
++        <rowConstraints>
++          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
++          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
++          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
++            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
++            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
++            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
++        </rowConstraints>
++         <children>
++            <Label text="User name" />
++            <Label text="Password" GridPane.rowIndex="1" />
++            <Label text="Re-type password" GridPane.rowIndex="2" />
++            <Button fx:id="registerBtn" mnemonicParsing="false" onAction="#registerBtnHandler" text="Register" GridPane.halignment="CENTER" GridPane.rowIndex="5" GridPane.valignment="CENTER" />
++            <Button fx:id="backLoginBtn" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" onAction="#backLoginBtnHandler" text="Return to Login Page" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="5" GridPane.valignment="CENTER" />
++            <TextField fx:id="userTextField" GridPane.columnIndex="1" />
++            <PasswordField fx:id="passPasswordField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
++            <PasswordField fx:id="rePassPasswordField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
++            <Button fx:id="selectBtn" mnemonicParsing="false" onAction="#selectBtnHandler" text="Select File Name" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="3" />
++            <Text fx:id="fileText" strokeType="OUTSIDE" strokeWidth="0.0" text="Select File." GridPane.rowIndex="4" />
++         </children>
++      </GridPane>
++      <Label layoutX="272.0" layoutY="94.0" text="Register New User" />
++   </children>
++</AnchorPane>
+diff --git a/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/secondary.fxml b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/secondary.fxml
+new file mode 100644
+index 0000000..fc8ffcc
+--- /dev/null
++++ b/JavaFXApplication1/src/main/resources/com/mycompany/javafxapplication1/secondary.fxml
+@@ -0,0 +1,49 @@
++<?xml version="1.0" encoding="UTF-8"?>
++
++<?import java.lang.*?>
++<?import javafx.geometry.*?>
++<?import javafx.scene.control.*?>
++<?import javafx.scene.layout.*?>
++<?import javafx.scene.layout.VBox?>
++<?import javafx.scene.control.Label?>
++<?import javafx.scene.control.Button?>
++<?import javafx.geometry.Insets?>
++
++<VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycompany.javafxapplication1.SecondaryController">
++    <children>
++        <Label text="Users List" />
++      <GridPane>
++        <columnConstraints>
++          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
++          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
++        </columnConstraints>
++        <rowConstraints>
++          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
++          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
++        </rowConstraints>
++         <children>
++            <Label text="Welcome" GridPane.halignment="CENTER" />
++            <TextField fx:id="userTextField" GridPane.columnIndex="1" />
++            <Label text="Custom data" GridPane.rowIndex="1" />
++            <TextField fx:id="customTextField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
++         </children>
++      </GridPane>
++      <TableView fx:id="dataTableView" prefHeight="200.0" prefWidth="200.0" />
++      <GridPane>
++        <columnConstraints>
++          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
++          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
++        </columnConstraints>
++        <rowConstraints>
++          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
++        </rowConstraints>
++         <children>
++              <Button fx:id="secondaryButton" onAction="#switchToPrimary" text="Return to Login" GridPane.columnIndex="1" />
++            <Button fx:id="refreshBtn" mnemonicParsing="false" onAction="#RefreshBtnHandler" text="Refresh" />
++         </children>
++      </GridPane>
++    </children>
++    <padding>
++        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
++    </padding>
++</VBox>
+diff --git a/README.md b/README.md
+index b617a8f..b9f96c3 100644
+--- a/README.md
++++ b/README.md
+@@ -1,2 +1 @@
+-# -SOFT40051_CWK
+-Advanced Software Engineering Course Work
++# comp20081_lab12
+
+commit 59b63cc0f6f54c9031f71824da8ea7534c44d7fe
+Author: N1169580 <emmanuel.gyening2023@my.ntu.ac.uk>
+Date:   Sat Nov 25 11:36:24 2023 +0000
+
+    Initial commit
+
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..b617a8f
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1,2 @@
++# -SOFT40051_CWK
++Advanced Software Engineering Course Work

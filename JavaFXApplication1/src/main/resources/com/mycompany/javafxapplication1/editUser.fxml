@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycompany.javafxapplication1.EditUserController">
+   <children>
+      <AnchorPane layoutX="22.0" layoutY="28.0" prefHeight="364.0" prefWidth="556.0">
+         <children>
+            <Label layoutX="60.0" layoutY="89.0" prefHeight="42.0" prefWidth="87.0" text="Username" />
+            <TextField fx:id="usernameTextField" editable="false" layoutX="204.0" layoutY="98.0" />
+            <Label layoutX="194.0" layoutY="28.0" prefHeight="49.0" prefWidth="102.0" text="Edit User details" />
+            <Label layoutX="76.0" layoutY="240.0" text="New Password" />
+            <Label layoutX="51.0" layoutY="282.0" text="Retype New password" />
+            <PasswordField fx:id="newpasswordTextField" layoutX="230.0" layoutY="236.0" prefHeight="25.0" prefWidth="145.0" />
+            <PasswordField fx:id="renewpasswordTextField" layoutX="230.0" layoutY="277.0" prefHeight="25.0" prefWidth="145.0" />
+            <Button fx:id="updateUser" layoutX="131.0" layoutY="313.0" mnemonicParsing="false" onAction="#updateUser" text="Update Details" />
+            <Button fx:id="cancelUpdatebtn" layoutX="353.0" layoutY="313.0" mnemonicParsing="false" onAction="#cancelUserUpdate" text="Cancel" />
+            <Label layoutX="76.0" layoutY="209.0" text="Old Password" />
+            <PasswordField fx:id="oldpasswordTextField" layoutX="228.0" layoutY="205.0" prefHeight="24.0" prefWidth="145.0" />
+         </children>
+      </AnchorPane>
+   </children>
+</AnchorPane>

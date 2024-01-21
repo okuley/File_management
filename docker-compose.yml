@@ -1,0 +1,57 @@
+version: '3'
+
+services:
+  ntu-vm-soft40051:
+    container_name: ntu-vm-soft40051
+    image: pedrombmachado/ntu_lubuntu:soft40051
+    ports:
+      - "3390:3389"
+      - "2022:22"
+    hostname: ntu-vm-soft40051
+    volumes:
+      - docker_soft40051:/home/ntu-user/NetBeansProjects
+    networks:
+      - soft40051_network
+
+  soft40051-files-container1:
+    container_name: soft40051-files-container1
+    image: pedrombmachado/soft40051_ubuntu_20.04:latest
+    ports:
+      - "4848:22"
+    hostname: soft40051-files-container1
+    networks:
+      - soft40051_network
+
+  soft40051-files-container2:
+    container_name: soft40051-files-container2
+    image: pedrombmachado/soft40051_ubuntu_20.04:latest
+    ports:
+      - "4849:22"
+    hostname: soft40051-files-container2
+    networks:
+      - soft40051_network
+
+  soft40051-files-container3:
+    container_name: soft40051-files-container3
+    image: pedrombmachado/soft40051_ubuntu_20.04:latest
+    ports:
+      - "4850:22"
+    hostname: soft40051-files-container3
+    networks:
+      - soft40051_network
+
+  soft40051-files-container4:
+    container_name: soft40051-files-container4
+    image: pedrombmachado/soft40051_ubuntu_20.04:latest
+    ports:
+      - "4851:22"
+    hostname: soft40051-files-container4
+    networks:
+      - soft40051_network
+
+networks:
+  soft40051_network:
+    driver: bridge
+
+volumes:
+  docker_soft40051:

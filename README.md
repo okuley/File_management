@@ -1,1 +1,1 @@
-# comp20081_lab12
+Application for uploading, encryption and splitting files with JavaFX
